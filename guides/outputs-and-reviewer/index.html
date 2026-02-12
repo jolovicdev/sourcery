@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/guides/outputs-and-reviewer/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Outputs And Reviewer - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Outputs And Reviewer";
+        var mkdocs_page_input_path = "guides/outputs-and-reviewer.md";
+        var mkdocs_page_url = "/sourcery/guides/outputs-and-reviewer/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Outputs And Reviewer</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#jsonl-persistence">JSONL Persistence</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#viewer-html">Viewer HTML</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reviewer-html">Reviewer HTML</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Guides</li>
+      <li class="breadcrumb-item active">Outputs And Reviewer</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/guides/outputs-and-reviewer.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="outputs-and-reviewer">Outputs And Reviewer<a class="headerlink" href="#outputs-and-reviewer" title="Permanent link">#</a></h1>
+<p>Sourcery supports machine-friendly persistence and human review workflows.</p>
+<h2 id="jsonl-persistence">JSONL Persistence<a class="headerlink" href="#jsonl-persistence" title="Permanent link">#</a></h2>
+<p>Write extraction output:</p>
+<pre><code class="language-python">from sourcery.io import save_extract_result_jsonl
+
+save_extract_result_jsonl(result, &quot;output/result.jsonl&quot;)
+</code></pre>
+<p>Load documents back:</p>
+<pre><code class="language-python">from sourcery.io import load_document_results_jsonl
+
+documents = load_document_results_jsonl(&quot;output/result.jsonl&quot;)
+</code></pre>
+<p>Iterate rows directly:</p>
+<pre><code class="language-python">from sourcery.io import iter_document_rows
+
+for row in iter_document_rows(&quot;output/result.jsonl&quot;):
+    print(row[&quot;document_id&quot;], len(row[&quot;extractions&quot;]))
+</code></pre>
+<h2 id="viewer-html">Viewer HTML<a class="headerlink" href="#viewer-html" title="Permanent link">#</a></h2>
+<p>Generate read-only visualization with highlighted grounded spans:</p>
+<pre><code class="language-python">from sourcery.io import write_document_html
+
+write_document_html(result.documents[0], &quot;output/document.viewer.html&quot;)
+</code></pre>
+<p>Notebook/inline rendering helper:</p>
+<pre><code class="language-python">from sourcery.io import visualize
+
+html_or_display = visualize(result.documents[0])
+</code></pre>
+<p><code>visualize("path/to/result.jsonl")</code> is also supported and uses the first document in the file.</p>
+<h2 id="reviewer-html">Reviewer HTML<a class="headerlink" href="#reviewer-html" title="Permanent link">#</a></h2>
+<p>Generate interactive review UI from a <code>DocumentResult</code>:</p>
+<pre><code class="language-python">from sourcery.io import write_reviewer_html
+
+write_reviewer_html(result.documents[0], &quot;output/document.reviewer.html&quot;)
+</code></pre>
+<p>Generate reviewer directly from JSONL:</p>
+<pre><code class="language-python">from sourcery.io import write_reviewer_html
+
+write_reviewer_html(&quot;output/result.jsonl&quot;, &quot;output/document.reviewer.html&quot;)
+</code></pre>
+<p>When a JSONL path is provided, the reviewer uses the first document row.</p>
+<p>Reviewer capabilities:</p>
+<ul>
+<li>search by text/attributes,</li>
+<li>filter by entity and review status,</li>
+<li>approve/reject/reset per extraction or filtered set,</li>
+<li>export approved rows to JSONL and CSV,</li>
+<li>persist review state in browser local storage.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../ingestion/" class="btn btn-neutral float-left" title="Ingestion"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../benchmarking/" class="btn btn-neutral float-right" title="Benchmarking">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../ingestion/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../benchmarking/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

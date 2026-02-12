@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/guides/usage/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Usage - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Usage";
+        var mkdocs_page_input_path = "guides/usage.md";
+        var mkdocs_page_url = "/sourcery/guides/usage/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Usage</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-sourcery-is">What Sourcery Is</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#when-to-use-sourcery">When To Use Sourcery</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#install">Install</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#core-public-api">Core Public API</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#data-contracts-you-define">Data Contracts You Define</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-entityspec">1) EntitySpec</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-entityschemaset">2) EntitySchemaSet</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#3-extractiontask">3) ExtractionTask</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#4-extractrequest">4) ExtractRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#5-extractresult">5) ExtractResult</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#runtime-config-runtimeconfig">Runtime Config (RuntimeConfig)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#extraction-options-extractoptions">Extraction Options (ExtractOptions)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#minimal-example-inline-text">Minimal Example (Inline Text)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#extract-from-files-pdfs-urls-images">Extract From Files / PDFs / URLs / Images</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#async-usage">Async Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#advanced-engine-usage">Advanced Engine Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#enabling-reconciliation-session-refinement">Enabling Reconciliation + Session Refinement</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#outputs-and-review">Outputs and Review</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#save-jsonl">Save JSONL</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#generate-html-viewer">Generate HTML viewer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#generate-reviewer-ui">Generate reviewer UI</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#scripted-end-to-end-runs">Scripted End-to-End Runs</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#benchmark-comparison-wrapper">Benchmark comparison wrapper</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#error-model">Error Model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#validation-commands">Validation Commands</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#production-notes">Production Notes</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Guides</li>
+      <li class="breadcrumb-item active">Usage</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/guides/usage.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="sourcery-usage-guide">Sourcery Usage Guide<a class="headerlink" href="#sourcery-usage-guide" title="Permanent link">#</a></h1>
+<h2 id="what-sourcery-is">What Sourcery Is<a class="headerlink" href="#what-sourcery-is" title="Permanent link">#</a></h2>
+<p>Sourcery is both:</p>
+<ol>
+<li>A <strong>Python library</strong> you import (<code>import sourcery</code>) to run schema-first extraction.</li>
+<li>A <strong>reference project</strong> with ingestion adapters, HTML reviewer UI, and runnable integration scripts.</li>
+</ol>
+<p>Use it as a library inside your app, and use this repository as a production template.</p>
+<h2 id="when-to-use-sourcery">When To Use Sourcery<a class="headerlink" href="#when-to-use-sourcery" title="Permanent link">#</a></h2>
+<p>Use Sourcery when you need:</p>
+<ul>
+<li>typed extraction contracts (Pydantic models),</li>
+<li>grounded spans (<code>char_start</code>, <code>char_end</code>) for every extraction,</li>
+<li>deterministic chunking/alignment/merge behavior,</li>
+<li>optional document-level reconciliation into canonical claims,</li>
+<li>human review/export workflows.</li>
+</ul>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">#</a></h2>
+<p>Python requirement: <code>&gt;=3.12</code></p>
+<p>Minimal runtime:</p>
+<pre><code class="language-bash">uv sync
+</code></pre>
+<p>With ingestion adapters (PDF/OCR/URL HTML):</p>
+<pre><code class="language-bash">uv sync --extra ingest
+</code></pre>
+<p>With dev tooling:</p>
+<pre><code class="language-bash">uv sync --extra dev --extra ingest
+</code></pre>
+<p>Set provider credentials for the model route you use in <code>RuntimeConfig.model</code> (for example <code>DEEPSEEK_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, etc.).</p>
+<h2 id="core-public-api">Core Public API<a class="headerlink" href="#core-public-api" title="Permanent link">#</a></h2>
+<p>Import-level API (<code>sourcery/__init__.py</code>):</p>
+<ol>
+<li><code>extract(request: ExtractRequest, engine: SourceryEngine | None = None) -&gt; ExtractResult</code></li>
+<li><code>aextract(request: ExtractRequest, engine: SourceryEngine | None = None) -&gt; ExtractResult</code></li>
+<li><code>extract_from_sources(sources, *, task, runtime, options=None, engine=None) -&gt; ExtractResult</code></li>
+<li><code>aextract_from_sources(...) -&gt; ExtractResult</code></li>
+<li><code>SourceryEngine</code> with <code>.extract(...)</code>, <code>.aextract(...)</code>, <code>.replay_run(...)</code></li>
+</ol>
+<h2 id="data-contracts-you-define">Data Contracts You Define<a class="headerlink" href="#data-contracts-you-define" title="Permanent link">#</a></h2>
+<h3 id="1-entityspec">1) <code>EntitySpec</code><a class="headerlink" href="#1-entityspec" title="Permanent link">#</a></h3>
+<ul>
+<li><code>name: str</code></li>
+<li><code>attributes_model: type[BaseModel]</code></li>
+</ul>
+<h3 id="2-entityschemaset">2) <code>EntitySchemaSet</code><a class="headerlink" href="#2-entityschemaset" title="Permanent link">#</a></h3>
+<ul>
+<li><code>entities: list[EntitySpec]</code></li>
+</ul>
+<h3 id="3-extractiontask">3) <code>ExtractionTask</code><a class="headerlink" href="#3-extractiontask" title="Permanent link">#</a></h3>
+<ul>
+<li><code>instructions: str</code></li>
+<li><code>schema: EntitySchemaSet</code></li>
+<li><code>examples: list[ExtractionExample]</code></li>
+<li><code>strict_example_alignment: bool = True</code></li>
+</ul>
+<h3 id="4-extractrequest">4) <code>ExtractRequest</code><a class="headerlink" href="#4-extractrequest" title="Permanent link">#</a></h3>
+<ul>
+<li><code>documents: list[SourceDocument] | str</code></li>
+<li><code>task: ExtractionTask</code></li>
+<li><code>options: ExtractOptions = ExtractOptions()</code></li>
+<li><code>runtime: RuntimeConfig</code></li>
+</ul>
+<h3 id="5-extractresult">5) <code>ExtractResult</code><a class="headerlink" href="#5-extractresult" title="Permanent link">#</a></h3>
+<ul>
+<li><code>documents: list[DocumentResult]</code></li>
+<li><code>run_trace: ExtractionRunTrace</code></li>
+<li><code>metrics: RunMetrics</code></li>
+<li><code>warnings: list[str]</code></li>
+</ul>
+<p><code>DocumentResult</code> includes:</p>
+<ul>
+<li><code>extractions: list[AlignedExtraction]</code></li>
+<li><code>canonical_claims: list[CanonicalClaim]</code></li>
+</ul>
+<h2 id="runtime-config-runtimeconfig">Runtime Config (<code>RuntimeConfig</code>)<a class="headerlink" href="#runtime-config-runtimeconfig" title="Permanent link">#</a></h2>
+<p>Required:</p>
+<ul>
+<li><code>model: str</code></li>
+</ul>
+<p>Core options:</p>
+<ul>
+<li><code>temperature: float = 0.0</code></li>
+<li><code>max_tokens: int | None = None</code></li>
+<li><code>stream: bool = False</code></li>
+<li><code>storage_dir: str = ".sourcery"</code></li>
+<li><code>respect_context_window: bool = True</code></li>
+</ul>
+<p>Reliability:</p>
+<ul>
+<li><code>retry: RetryPolicy</code></li>
+<li><code>max_attempts=3</code></li>
+<li><code>initial_backoff_seconds=0.75</code></li>
+<li><code>max_backoff_seconds=8.0</code></li>
+<li><code>backoff_multiplier=2.0</code></li>
+<li><code>retry_on_rate_limit=True</code></li>
+<li><code>retry_on_transient_errors=True</code></li>
+<li><code>auto_resume_paused_runs=True</code></li>
+<li><code>max_pause_resumes=5</code></li>
+</ul>
+<p>Session refinement (optional):</p>
+<ul>
+<li><code>session_refinement: SessionRefinementConfig</code></li>
+<li><code>enabled=False</code></li>
+<li><code>max_turns=1</code></li>
+<li><code>context_chars=320</code></li>
+</ul>
+<p>Document-level reconciliation (optional):</p>
+<ul>
+<li><code>reconciliation: ReconciliationConfig</code></li>
+<li><code>enabled=False</code></li>
+<li><code>use_workforce=True</code></li>
+<li><code>min_mentions_for_claim=1</code></li>
+<li><code>max_claims=200</code></li>
+</ul>
+<h2 id="extraction-options-extractoptions">Extraction Options (<code>ExtractOptions</code>)<a class="headerlink" href="#extraction-options-extractoptions" title="Permanent link">#</a></h2>
+<ul>
+<li><code>max_chunk_chars=1200</code></li>
+<li><code>context_window_chars=200</code></li>
+<li><code>max_passes=2</code></li>
+<li><code>batch_concurrency=16</code></li>
+<li><code>enable_fuzzy_alignment=True</code></li>
+<li><code>fuzzy_alignment_threshold=0.82</code></li>
+<li><code>accept_partial_exact=False</code></li>
+<li><code>stop_when_no_new_extractions=True</code></li>
+<li><code>allow_unresolved=False</code></li>
+</ul>
+<h2 id="minimal-example-inline-text">Minimal Example (Inline Text)<a class="headerlink" href="#minimal-example-inline-text" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pydantic import BaseModel
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+)
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+request = ExtractRequest(
+    documents=&quot;Alice is the CEO of Acme.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract person entities.&quot;,
+        schema=EntitySchemaSet(
+            entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]
+        ),
+        examples=[
+            ExtractionExample(
+                text=&quot;Bob is the CTO.&quot;,
+                extractions=[
+                    ExampleExtraction(entity=&quot;person&quot;, text=&quot;Bob&quot;, attributes={&quot;role&quot;: &quot;CTO&quot;})
+                ],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = sourcery.extract(request)
+print(result.metrics.model_dump(mode=&quot;json&quot;))
+for ext in result.documents[0].extractions:
+    print(ext.entity, ext.text, ext.char_start, ext.char_end, ext.alignment_status)
+</code></pre>
+<p>Notebook equivalent: <code>examples/notebooks/sourcery_quickstart.ipynb</code></p>
+<h2 id="extract-from-files-pdfs-urls-images">Extract From Files / PDFs / URLs / Images<a class="headerlink" href="#extract-from-files-pdfs-urls-images" title="Permanent link">#</a></h2>
+<p>Use the source-based helper:</p>
+<pre><code class="language-python">result = sourcery.extract_from_sources(
+    [&quot;1706.03762v7.pdf&quot;, &quot;https://example.com/article.html&quot;],
+    task=task,
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+</code></pre>
+<p>Supported ingestion via <code>load_source_document(s)</code>:</p>
+<ol>
+<li>Inline text</li>
+<li>Text files</li>
+<li>PDF files (<code>pypdf</code>)</li>
+<li>HTML files / raw HTML</li>
+<li>URLs</li>
+<li>OCR image files (<code>Pillow</code> + <code>pytesseract</code>)</li>
+</ol>
+<p>Notes:</p>
+<ul>
+<li>PDF loader is text-extraction first (<code>pypdf</code>).</li>
+<li>OCR is currently image-based ingestion, not multimodal LLM extraction.</li>
+</ul>
+<p>Notebook equivalent: <code>examples/notebooks/sourcery_pdf_workflow.ipynb</code></p>
+<h2 id="async-usage">Async Usage<a class="headerlink" href="#async-usage" title="Permanent link">#</a></h2>
+<pre><code class="language-python">result = await sourcery.aextract(request)
+</code></pre>
+<h2 id="advanced-engine-usage">Advanced Engine Usage<a class="headerlink" href="#advanced-engine-usage" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+result = engine.extract(request)
+
+raw_run_id = result.documents[0].extractions[0].provenance.raw_run_id
+if raw_run_id:
+    replay, events = engine.replay_run(request, raw_run_id)
+    print(replay[&quot;status&quot;] if replay else None, len(events))
+</code></pre>
+<h2 id="enabling-reconciliation-session-refinement">Enabling Reconciliation + Session Refinement<a class="headerlink" href="#enabling-reconciliation-session-refinement" title="Permanent link">#</a></h2>
+<pre><code class="language-python">runtime = RuntimeConfig(
+    model=&quot;deepseek/deepseek-chat&quot;,
+    session_refinement={&quot;enabled&quot;: True, &quot;max_turns&quot;: 1, &quot;context_chars&quot;: 320},
+    reconciliation={&quot;enabled&quot;: True, &quot;use_workforce&quot;: True, &quot;max_claims&quot;: 100},
+)
+</code></pre>
+<p>What this does:</p>
+<ol>
+<li>Session refinement adds multi-turn continuity hints per chunk.</li>
+<li>Reconciliation runs document-level resolver workflow and returns <code>canonical_claims</code>.</li>
+</ol>
+<h2 id="outputs-and-review">Outputs and Review<a class="headerlink" href="#outputs-and-review" title="Permanent link">#</a></h2>
+<h3 id="save-jsonl">Save JSONL<a class="headerlink" href="#save-jsonl" title="Permanent link">#</a></h3>
+<pre><code class="language-python">from sourcery.io import save_extract_result_jsonl
+save_extract_result_jsonl(result, &quot;output/result.jsonl&quot;)
+</code></pre>
+<h3 id="generate-html-viewer">Generate HTML viewer<a class="headerlink" href="#generate-html-viewer" title="Permanent link">#</a></h3>
+<pre><code class="language-python">from sourcery.io import write_document_html
+write_document_html(result.documents[0], &quot;output/document.viewer.html&quot;)
+</code></pre>
+<h3 id="generate-reviewer-ui">Generate reviewer UI<a class="headerlink" href="#generate-reviewer-ui" title="Permanent link">#</a></h3>
+<pre><code class="language-python">from sourcery.io import write_reviewer_html
+write_reviewer_html(result.documents[0], &quot;output/document.reviewer.html&quot;)
+</code></pre>
+<p>Reviewer supports:</p>
+<ul>
+<li>search,</li>
+<li>entity/status filters,</li>
+<li>approve/reject/reset,</li>
+<li>export approved JSONL/CSV.</li>
+</ul>
+<h2 id="scripted-end-to-end-runs">Scripted End-to-End Runs<a class="headerlink" href="#scripted-end-to-end-runs" title="Permanent link">#</a></h2>
+<h3 id="benchmark-comparison-wrapper">Benchmark comparison wrapper<a class="headerlink" href="#benchmark-comparison-wrapper" title="Permanent link">#</a></h3>
+<pre><code class="language-bash">uv run benchmark_compare.py --text-types english
+</code></pre>
+<h2 id="error-model">Error Model<a class="headerlink" href="#error-model" title="Permanent link">#</a></h2>
+<p>Important exception classes (<code>sourcery/exceptions.py</code>):</p>
+<ul>
+<li><code>SourceryError</code></li>
+<li><code>SourceryRuntimeError</code></li>
+<li><code>SourceryProviderError</code></li>
+<li><code>SourceryRateLimitError</code></li>
+<li><code>SourceryRetryExhaustedError</code></li>
+<li><code>SourceryPausedRunError</code></li>
+<li><code>SourceryPipelineError</code></li>
+<li><code>SourceryIngestionError</code></li>
+<li><code>SourceryDependencyError</code></li>
+</ul>
+<h2 id="validation-commands">Validation Commands<a class="headerlink" href="#validation-commands" title="Permanent link">#</a></h2>
+<pre><code class="language-bash">uv run --extra dev pytest -q
+uv run --extra dev ruff check sourcery tests
+uv run --extra dev mypy sourcery
+</code></pre>
+<h2 id="production-notes">Production Notes<a class="headerlink" href="#production-notes" title="Permanent link">#</a></h2>
+<ol>
+<li>Treat schemas as API contracts and version them.</li>
+<li>Start with strict examples and deterministic options.</li>
+<li>Enable reconciliation for long documents where alias/coreference matters.</li>
+<li>Keep reviewer approval in-the-loop for high-stakes workflows.</li>
+<li>Persist JSONL + run trace for audit and replay.</li>
+</ol>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../code-examples/" class="btn btn-neutral float-left" title="Code Examples"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../runtime-and-tuning/" class="btn btn-neutral float-right" title="Runtime And Tuning">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../code-examples/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../runtime-and-tuning/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

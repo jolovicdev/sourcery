@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/architecture/runtime-internals/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Runtime Internals - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Runtime Internals";
+        var mkdocs_page_input_path = "architecture/runtime-internals.md";
+        var mkdocs_page_url = "/sourcery/architecture/runtime-internals/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Runtime Internals</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#engine">Engine</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#runtime-boundary">Runtime Boundary</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#blackgeorge-runtime-composition">BlackGeorge Runtime Composition</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#observability-and-replay">Observability and Replay</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reconciliation-fallback-behavior">Reconciliation Fallback Behavior</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Architecture</li>
+      <li class="breadcrumb-item active">Runtime Internals</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/architecture/runtime-internals.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="runtime-internals">Runtime Internals<a class="headerlink" href="#runtime-internals" title="Permanent link">#</a></h1>
+<h2 id="engine">Engine<a class="headerlink" href="#engine" title="Permanent link">#</a></h2>
+<p><code>SourceryEngine</code> (<code>sourcery/runtime/engine.py</code>) orchestrates the extraction lifecycle:</p>
+<ul>
+<li>runtime construction,</li>
+<li>pass scheduling,</li>
+<li>chunk runtime execution,</li>
+<li>alignment and merge,</li>
+<li>optional reconciliation,</li>
+<li>metrics and trace finalization.</li>
+</ul>
+<p>Public entry points:</p>
+<ul>
+<li><code>SourceryEngine.extract(request)</code></li>
+<li><code>SourceryEngine.aextract(request)</code></li>
+<li><code>SourceryEngine.replay_run(request, raw_run_id)</code></li>
+</ul>
+<h2 id="runtime-boundary">Runtime Boundary<a class="headerlink" href="#runtime-boundary" title="Permanent link">#</a></h2>
+<p>Protocols in <code>sourcery/runtime/base.py</code> define black-box contracts:</p>
+<ul>
+<li><code>ChunkRuntime</code></li>
+<li><code>DocumentReconciliationRuntime</code></li>
+</ul>
+<p>Any runtime implementation that satisfies these interfaces can be swapped in.</p>
+<h2 id="blackgeorge-runtime-composition">BlackGeorge Runtime Composition<a class="headerlink" href="#blackgeorge-runtime-composition" title="Permanent link">#</a></h2>
+<p><code>BlackGeorgeRuntime</code> combines focused mixins:</p>
+<ul>
+<li><code>blackgeorge_retry_mixin.py</code>: retry/backoff and paused-run resume.</li>
+<li><code>blackgeorge_refinement_mixin.py</code>: per-document session refinement contexts.</li>
+<li><code>blackgeorge_flow_mixin.py</code>: chunk flow execution and report normalization.</li>
+<li><code>blackgeorge_reconciliation_mixin.py</code>: document-level reconciliation workforce.</li>
+</ul>
+<p><code>model_gateway.py</code> builds per-entity response schema variants and parses structured candidate output.</p>
+<h2 id="observability-and-replay">Observability and Replay<a class="headerlink" href="#observability-and-replay" title="Permanent link">#</a></h2>
+<ul>
+<li>Runtime subscribes to desk event bus (<code>run.*</code>, <code>worker.*</code>, <code>step.*</code>, <code>llm.*</code>, <code>tool.*</code>).</li>
+<li>Events are normalized to <code>EventRecord</code> and attached to <code>ExtractionRunTrace</code>.</li>
+<li><code>replay_run</code> reads raw run data/events from run store for audits and debugging.</li>
+</ul>
+<h2 id="reconciliation-fallback-behavior">Reconciliation Fallback Behavior<a class="headerlink" href="#reconciliation-fallback-behavior" title="Permanent link">#</a></h2>
+<p>When reconciliation is enabled:</p>
+<ol>
+<li>Deterministic fallback canonical claims are prepared first.</li>
+<li>Workforce reconciliation is attempted if <code>use_workforce=True</code>.</li>
+<li>If workforce fails with <code>SourceryRuntimeError</code>, engine returns fallback claims and warning text.</li>
+<li>Non-Sourcery unexpected exceptions are propagated.</li>
+</ol>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../pipeline-internals/" class="btn btn-neutral float-left" title="Pipeline Internals"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../reference/public-api/" class="btn btn-neutral float-right" title="Public API">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../pipeline-internals/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../reference/public-api/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

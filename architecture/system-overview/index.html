@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/architecture/system-overview/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>System Overview - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "System Overview";
+        var mkdocs_page_input_path = "architecture/system-overview.md";
+        var mkdocs_page_url = "/sourcery/architecture/system-overview/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">System Overview</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#primary-primitives">Primary Primitives</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#module-boundaries">Module Boundaries</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-flow">Execution Flow</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#determinism-notes">Determinism Notes</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Architecture</li>
+      <li class="breadcrumb-item active">System Overview</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/architecture/system-overview.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="system-overview">System Overview<a class="headerlink" href="#system-overview" title="Permanent link">#</a></h1>
+<p>Sourcery is structured as replaceable black boxes around typed contracts.</p>
+<h2 id="primary-primitives">Primary Primitives<a class="headerlink" href="#primary-primitives" title="Permanent link">#</a></h2>
+<p>Defined in <code>sourcery/contracts/models.py</code>:</p>
+<ul>
+<li><code>SourceDocument</code></li>
+<li><code>TextChunk</code></li>
+<li><code>ExtractionCandidate</code></li>
+<li><code>AlignedExtraction</code></li>
+<li><code>DocumentResult</code></li>
+<li><code>CanonicalClaim</code></li>
+<li><code>ExtractRequest</code></li>
+<li><code>ExtractResult</code></li>
+</ul>
+<p>These primitives are the stable interface. Internal implementation can change without breaking user code if these contracts remain consistent.</p>
+<h2 id="module-boundaries">Module Boundaries<a class="headerlink" href="#module-boundaries" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/contracts</code>: request/result/runtime contracts.</li>
+<li><code>sourcery/pipeline</code>: deterministic chunking, prompt compilation, alignment, merge.</li>
+<li><code>sourcery/runtime</code>: model invocation orchestration and retries.</li>
+<li><code>sourcery/ingest</code>: source normalization into <code>SourceDocument</code>.</li>
+<li><code>sourcery/io</code>: JSONL persistence and HTML review surfaces.</li>
+<li><code>sourcery/observability</code>: run trace and event collection.</li>
+<li><code>sourcery/benchmarks</code>: benchmark CLI and comparative tooling.</li>
+</ul>
+<h2 id="execution-flow">Execution Flow<a class="headerlink" href="#execution-flow" title="Permanent link">#</a></h2>
+<ol>
+<li>Validate <code>ExtractRequest</code> and task examples.</li>
+<li>Normalize input documents.</li>
+<li>Plan chunks per extraction pass.</li>
+<li>Execute runtime batch for chunks.</li>
+<li>Align candidates to source spans.</li>
+<li>Merge non-overlapping resolved extractions.</li>
+<li>Optionally reconcile canonical claims.</li>
+<li>Emit <code>ExtractResult</code> with metrics, warnings, and run trace.</li>
+</ol>
+<h2 id="determinism-notes">Determinism Notes<a class="headerlink" href="#determinism-notes" title="Permanent link">#</a></h2>
+<p>Determinism is strongest in pipeline logic (<code>chunking</code>, <code>aligner</code>, <code>merger</code>).
+Runtime behavior may vary with provider/model behavior, but deterministic options plus strict examples reduce drift.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../guides/testing-and-validation/" class="btn btn-neutral float-left" title="Testing And Validation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../pipeline-internals/" class="btn btn-neutral float-right" title="Pipeline Internals">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../../guides/testing-and-validation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../pipeline-internals/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

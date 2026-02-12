@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/getting-started/installation/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Installation - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Installation";
+        var mkdocs_page_input_path = "getting-started/installation.md";
+        var mkdocs_page_url = "/sourcery/getting-started/installation/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Installation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#install-dependencies">Install Dependencies</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#provider-credentials">Provider Credentials</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#smoke-test">Smoke Test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#validate-full-dev-environment">Validate Full Dev Environment</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Getting Started</li>
+      <li class="breadcrumb-item active">Installation</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/getting-started/installation.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">#</a></h1>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">#</a></h2>
+<ul>
+<li>Python <code>&gt;=3.12</code></li>
+<li><code>uv</code> package manager</li>
+<li>API key for your model provider (for example <code>DEEPSEEK_API_KEY</code>)</li>
+</ul>
+<p>Base runtime dependency is <code>blackgeorge</code> (installed automatically with <code>sourceryforge</code>).</p>
+<p>PyPI distribution name is <code>sourceryforge</code>, while Python import path remains <code>sourcery</code>.</p>
+<h2 id="install-dependencies">Install Dependencies<a class="headerlink" href="#install-dependencies" title="Permanent link">#</a></h2>
+<p>Core package only:</p>
+<pre><code class="language-bash">uv sync
+</code></pre>
+<p>Install from PyPI:</p>
+<pre><code class="language-bash">pip install sourceryforge
+</code></pre>
+<p>With ingestion adapters (PDF/OCR/URL workflows):</p>
+<pre><code class="language-bash">uv sync --extra ingest
+</code></pre>
+<p>With dev tooling (tests, lint, type-check):</p>
+<pre><code class="language-bash">uv sync --extra dev --extra ingest
+</code></pre>
+<p>With docs tooling:</p>
+<pre><code class="language-bash">uv sync --extra docs
+</code></pre>
+<h2 id="provider-credentials">Provider Credentials<a class="headerlink" href="#provider-credentials" title="Permanent link">#</a></h2>
+<p>Sourcery runtime calls are delegated to the configured runtime/provider (<code>RuntimeConfig.model</code>).
+This repository itself explicitly reads these keys in helper scripts:</p>
+<pre><code class="language-bash">export DEEPSEEK_API_KEY=&quot;...&quot;
+</code></pre>
+<pre><code class="language-bash">export OPENROUTER_API_KEY=&quot;...&quot;
+</code></pre>
+<p>Set the credentials required by your selected model route before calling extraction.
+For example, <code>RuntimeConfig(model="deepseek/deepseek-chat")</code> typically requires <code>DEEPSEEK_API_KEY</code>.</p>
+<p>Benchmark scripts use <code>DEEPSEEK_API_KEY</code> or <code>OPENROUTER_API_KEY</code> depending on <code>--sourcery-model</code>.</p>
+<h2 id="smoke-test">Smoke Test<a class="headerlink" href="#smoke-test" title="Permanent link">#</a></h2>
+<pre><code class="language-bash">uv run python - &lt;&lt;'PY'
+from pydantic import BaseModel
+import sourcery
+from sourcery.contracts import EntitySchemaSet, EntitySpec, ExtractRequest, ExtractionExample, ExtractionTask, ExampleExtraction, RuntimeConfig
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+request = ExtractRequest(
+    documents=&quot;Alice is CTO at Acme.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract people and role if present.&quot;,
+        schema=EntitySchemaSet(entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]),
+        examples=[
+            ExtractionExample(
+                text=&quot;Bob is CEO.&quot;,
+                extractions=[ExampleExtraction(entity=&quot;person&quot;, text=&quot;Bob&quot;, attributes={&quot;role&quot;: &quot;CEO&quot;})],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = sourcery.extract(request)
+print(result.metrics.model_dump(mode=&quot;json&quot;))
+PY
+</code></pre>
+<h2 id="validate-full-dev-environment">Validate Full Dev Environment<a class="headerlink" href="#validate-full-dev-environment" title="Permanent link">#</a></h2>
+<pre><code class="language-bash">uv run --extra dev pytest -q
+uv run --extra dev ruff check sourcery tests
+uv run --extra dev mypy sourcery
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../.." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../quickstart/" class="btn btn-neutral float-right" title="Quickstart">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../.." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../quickstart/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

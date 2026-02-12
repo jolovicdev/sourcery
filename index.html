@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="Build and run schema-first extraction pipelines with Sourcery." /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Sourcery Documentation</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = "/sourcery/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-you-build-with-it">What You Build With It</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#core-boundaries">Core Boundaries</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#start-here">Start Here</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#minimal-end-to-end-path">Minimal End-to-End Path</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#documentation-build">Documentation Build</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/index.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="sourcery">Sourcery<a class="headerlink" href="#sourcery" title="Permanent link">#</a></h1>
+<p>Sourcery is a schema-first extraction framework for turning unstructured text, files, URLs, and documents into typed, grounded entities.</p>
+<p>If you can define your target entities as Pydantic models, you can run reproducible extraction pipelines with traceability, retry policy, and reviewable outputs.</p>
+<h2 id="what-you-build-with-it">What You Build With It<a class="headerlink" href="#what-you-build-with-it" title="Permanent link">#</a></h2>
+<ul>
+<li>Typed entity extraction with strict schema validation.</li>
+<li>Character-grounded spans (<code>char_start</code>, <code>char_end</code>) for each extraction.</li>
+<li>Deterministic chunking, alignment, and merge behavior.</li>
+<li>JSONL + HTML outputs for downstream systems and human review.</li>
+</ul>
+<h2 id="core-boundaries">Core Boundaries<a class="headerlink" href="#core-boundaries" title="Permanent link">#</a></h2>
+<ol>
+<li>Contracts: <code>sourcery/contracts</code> defines all request/result primitives.</li>
+<li>Pipeline: <code>sourcery/pipeline</code> handles chunking, prompt envelopes, alignment, merge.</li>
+<li>Runtime: <code>sourcery/runtime</code> executes model calls and orchestration.</li>
+<li>IO + Review: <code>sourcery/io</code> persists and visualizes extraction results.</li>
+</ol>
+<h2 id="start-here">Start Here<a class="headerlink" href="#start-here" title="Permanent link">#</a></h2>
+<ol>
+<li>Install and configure credentials: <a href="getting-started/installation/">Getting Started / Installation</a></li>
+<li>Run first extraction in &lt;5 minutes: <a href="getting-started/quickstart/">Getting Started / Quickstart</a></li>
+<li>Build from mixed sources (PDF/URL/text): <a href="guides/build-a-pipeline/">Guides / Build A Pipeline</a></li>
+<li>Tune reliability and throughput: <a href="guides/runtime-and-tuning/">Guides / Runtime And Tuning</a></li>
+</ol>
+<h2 id="minimal-end-to-end-path">Minimal End-to-End Path<a class="headerlink" href="#minimal-end-to-end-path" title="Permanent link">#</a></h2>
+<pre><code class="language-bash">uv sync --extra ingest
+export DEEPSEEK_API_KEY=&quot;...&quot;
+uv run python - &lt;&lt;'PY'
+from pydantic import BaseModel
+import sourcery
+from sourcery.contracts import EntitySchemaSet, EntitySpec, ExtractRequest, ExtractionExample, ExtractionTask, ExampleExtraction, RuntimeConfig
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+request = ExtractRequest(
+    documents=&quot;Alice is CTO at Acme.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract people and role if present.&quot;,
+        schema=EntitySchemaSet(entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]),
+        examples=[
+            ExtractionExample(
+                text=&quot;Bob is CEO.&quot;,
+                extractions=[ExampleExtraction(entity=&quot;person&quot;, text=&quot;Bob&quot;, attributes={&quot;role&quot;: &quot;CEO&quot;})],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = sourcery.extract(request)
+print(result.metrics.model_dump(mode=&quot;json&quot;))
+PY
+</code></pre>
+<p>If you do not use DeepSeek, set the provider key required by your selected model route.</p>
+<h2 id="documentation-build">Documentation Build<a class="headerlink" href="#documentation-build" title="Permanent link">#</a></h2>
+<p>Serve locally:</p>
+<pre><code class="language-bash">uv run --extra docs mkdocs serve
+</code></pre>
+<p>Build static docs with strict validation:</p>
+<pre><code class="language-bash">uv run --extra docs mkdocs build --strict
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="getting-started/installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+    
+      <span><a href="getting-started/installation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2026-02-12 17:50:36.718470+00:00
+-->

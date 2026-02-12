@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/architecture/pipeline-internals/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Pipeline Internals - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Pipeline Internals";
+        var mkdocs_page_input_path = "architecture/pipeline-internals.md";
+        var mkdocs_page_url = "/sourcery/architecture/pipeline-internals/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Pipeline Internals</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#chunkingpy">chunking.py</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prompt_compilerpy">prompt_compiler.py</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#alignerpy">aligner.py</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mergerpy">merger.py</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example_validatorpy">example_validator.py</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Architecture</li>
+      <li class="breadcrumb-item active">Pipeline Internals</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/architecture/pipeline-internals.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="pipeline-internals">Pipeline Internals<a class="headerlink" href="#pipeline-internals" title="Permanent link">#</a></h1>
+<p>Pipeline modules are deterministic and side-effect free.</p>
+<h2 id="chunkingpy"><code>chunking.py</code><a class="headerlink" href="#chunkingpy" title="Permanent link">#</a></h2>
+<p>Responsibilities:</p>
+<ul>
+<li>Segment document text into stable chunk windows.</li>
+<li>Preserve global offsets (<code>char_start</code>, <code>char_end</code>) in each <code>TextChunk</code>.</li>
+<li>Attach optional previous context for continuity.</li>
+</ul>
+<p>Key operational knobs from <code>ExtractOptions</code>:</p>
+<ul>
+<li><code>max_chunk_chars</code></li>
+<li><code>context_window_chars</code></li>
+</ul>
+<p><code>plan_chunks(...)</code> receives <code>pass_id</code> for chunk identity; pass iteration (<code>max_passes</code>) is controlled by <code>SourceryEngine</code>.</p>
+<h2 id="prompt_compilerpy"><code>prompt_compiler.py</code><a class="headerlink" href="#prompt_compilerpy" title="Permanent link">#</a></h2>
+<p>Responsibilities:</p>
+<ul>
+<li>Build system/user prompt envelopes for runtime workers.</li>
+<li>Serialize entity schema and examples into a stable payload format.</li>
+<li>Inject pass/chunk context.</li>
+</ul>
+<p>Output primitive:</p>
+<ul>
+<li><code>PromptEnvelope(system, user, schema_payload)</code></li>
+</ul>
+<h2 id="alignerpy"><code>aligner.py</code><a class="headerlink" href="#alignerpy" title="Permanent link">#</a></h2>
+<p>Responsibilities:</p>
+<ul>
+<li>Map runtime <code>ExtractionCandidate</code> values back onto source text.</li>
+<li>Produce <code>AlignedExtraction</code> with offsets and alignment status.</li>
+</ul>
+<p>Resolution strategy:</p>
+<ol>
+<li>Exact span match</li>
+<li>Fuzzy match (optional)</li>
+<li>Partial exact fallback (optional)</li>
+<li>Unresolved when match fails</li>
+</ol>
+<h2 id="mergerpy"><code>merger.py</code><a class="headerlink" href="#mergerpy" title="Permanent link">#</a></h2>
+<p>Responsibilities:</p>
+<ul>
+<li>Merge aligned extractions per document.</li>
+<li>Resolve overlaps deterministically.</li>
+</ul>
+<p>Winner precedence favors stronger grounding and stable ordering to maintain reproducibility across runs.</p>
+<h2 id="example_validatorpy"><code>example_validator.py</code><a class="headerlink" href="#example_validatorpy" title="Permanent link">#</a></h2>
+<p>Responsibilities:</p>
+<ul>
+<li>Validate that each example extraction is alignable in its example text.</li>
+<li>Emit issues with statuses (<code>fuzzy</code>, <code>unresolved</code>) when exact span matching fails.</li>
+<li>Raise <code>ExampleValidationError</code> when strict mode requires it.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../system-overview/" class="btn btn-neutral float-left" title="System Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../runtime-internals/" class="btn btn-neutral float-right" title="Runtime Internals">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../system-overview/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../runtime-internals/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

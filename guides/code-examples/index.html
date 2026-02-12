@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/guides/code-examples/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Code Examples - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Code Examples";
+        var mkdocs_page_input_path = "guides/code-examples.md";
+        var mkdocs_page_url = "/sourcery/guides/code-examples/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Code Examples</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#1-minimal-typed-extraction">1) Minimal typed extraction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#2-multi-entity-extraction-with-options">2) Multi-entity extraction with options</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-extract-directly-from-sources-textfilepdfhtmlurl">3) Extract directly from sources (text/file/PDF/HTML/URL)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#4-async-extraction">4) Async extraction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#5-reliability-controls-retry-session-refinement-reconciliation">5) Reliability controls: retry, session refinement, reconciliation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#6-saveload-jsonl-reviewer-html">6) Save/load JSONL + reviewer HTML</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#7-notebookhtml-visualization">7) Notebook/HTML visualization</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#8-replay-a-blackgeorge-run-from-provenance">8) Replay a BlackGeorge run from provenance</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#9-error-handling-with-typed-exceptions">9) Error handling with typed exceptions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#10-benchmark-command">10) Benchmark command</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/file-by-file-map/">File-by-File Map</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Guides</li>
+      <li class="breadcrumb-item active">Code Examples</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/guides/code-examples.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="code_examplesmd">CODE_EXAMPLES.md<a class="headerlink" href="#code_examplesmd" title="Permanent link">#</a></h1>
+<p>Practical examples for the current Sourcery API.</p>
+<h2 id="1-minimal-typed-extraction">1) Minimal typed extraction<a class="headerlink" href="#1-minimal-typed-extraction" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pydantic import BaseModel
+
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+)
+
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+
+request = ExtractRequest(
+    documents=&quot;Alice is the CEO of Acme.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract people and their role.&quot;,
+        schema=EntitySchemaSet(
+            entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]
+        ),
+        examples=[
+            ExtractionExample(
+                text=&quot;Bob is the CTO.&quot;,
+                extractions=[
+                    ExampleExtraction(
+                        entity=&quot;person&quot;,
+                        text=&quot;Bob&quot;,
+                        attributes={&quot;role&quot;: &quot;CTO&quot;},
+                    )
+                ],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = sourcery.extract(request)
+print(result.metrics.model_dump(mode=&quot;json&quot;))
+print(result.documents[0].extractions)
+</code></pre>
+<h2 id="2-multi-entity-extraction-with-options">2) Multi-entity extraction with options<a class="headerlink" href="#2-multi-entity-extraction-with-options" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pydantic import BaseModel
+
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractOptions,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+    SourceDocument,
+)
+
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+
+class OrgAttrs(BaseModel):
+    industry: str | None = None
+
+
+request = ExtractRequest(
+    documents=[
+        SourceDocument(document_id=&quot;doc-1&quot;, text=&quot;Alice joined Acme as CEO.&quot;),
+        SourceDocument(document_id=&quot;doc-2&quot;, text=&quot;Bob became CTO at Globex.&quot;),
+    ],
+    task=ExtractionTask(
+        instructions=&quot;Extract people and organizations.&quot;,
+        schema=EntitySchemaSet(
+            entities=[
+                EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs),
+                EntitySpec(name=&quot;organization&quot;, attributes_model=OrgAttrs),
+            ]
+        ),
+        examples=[
+            ExtractionExample(
+                text=&quot;Carol works at Initech.&quot;,
+                extractions=[
+                    ExampleExtraction(entity=&quot;person&quot;, text=&quot;Carol&quot;, attributes={&quot;role&quot;: None}),
+                    ExampleExtraction(
+                        entity=&quot;organization&quot;,
+                        text=&quot;Initech&quot;,
+                        attributes={&quot;industry&quot;: None},
+                    ),
+                ],
+            )
+        ],
+    ),
+    options=ExtractOptions(
+        max_chunk_chars=900,
+        max_passes=2,
+        batch_concurrency=8,
+        fuzzy_alignment_threshold=0.82,
+        stop_when_no_new_extractions=True,
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = sourcery.extract(request)
+for doc in result.documents:
+    print(doc.document_id, len(doc.extractions), len(doc.canonical_claims))
+</code></pre>
+<h2 id="3-extract-directly-from-sources-textfilepdfhtmlurl">3) Extract directly from sources (text/file/PDF/HTML/URL)<a class="headerlink" href="#3-extract-directly-from-sources-textfilepdfhtmlurl" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pathlib import Path
+from pydantic import BaseModel
+
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+)
+
+
+class ClaimAttrs(BaseModel):
+    category: str | None = None
+
+
+task = ExtractionTask(
+    instructions=&quot;Extract factual claims.&quot;,
+    schema=EntitySchemaSet(
+        entities=[EntitySpec(name=&quot;claim&quot;, attributes_model=ClaimAttrs)]
+    ),
+    examples=[
+        ExtractionExample(
+            text=&quot;Revenue increased in 2025.&quot;,
+            extractions=[
+                ExampleExtraction(
+                    entity=&quot;claim&quot;,
+                    text=&quot;Revenue increased in 2025&quot;,
+                    attributes={&quot;category&quot;: &quot;finance&quot;},
+                )
+            ],
+        )
+    ],
+)
+
+result = sourcery.extract_from_sources(
+    [
+        &quot;Inline text source&quot;,
+        Path(&quot;./docs/input.txt&quot;),
+        Path(&quot;./docs/report.pdf&quot;),
+        Path(&quot;./docs/page.html&quot;),
+        &quot;https://example.com/report&quot;,
+    ],
+    task=task,
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+print(result.metrics.documents_total)
+</code></pre>
+<p>Notes:
+- PDF ingestion requires <code>pypdf</code>.
+- OCR image ingestion requires <code>pillow</code> and <code>pytesseract</code>.</p>
+<h2 id="4-async-extraction">4) Async extraction<a class="headerlink" href="#4-async-extraction" title="Permanent link">#</a></h2>
+<pre><code class="language-python">import asyncio
+from pydantic import BaseModel
+
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+)
+
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+
+async def main() -&gt; None:
+    request = ExtractRequest(
+        documents=&quot;Dana is VP Engineering.&quot;,
+        task=ExtractionTask(
+            instructions=&quot;Extract people.&quot;,
+            schema=EntitySchemaSet(
+                entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]
+            ),
+            examples=[
+                ExtractionExample(
+                    text=&quot;Eve is CFO.&quot;,
+                    extractions=[
+                        ExampleExtraction(entity=&quot;person&quot;, text=&quot;Eve&quot;, attributes={&quot;role&quot;: &quot;CFO&quot;})
+                    ],
+                )
+            ],
+        ),
+        runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    )
+    result = await sourcery.aextract(request)
+    print(result.metrics.extracted_total)
+
+
+asyncio.run(main())
+</code></pre>
+<h2 id="5-reliability-controls-retry-session-refinement-reconciliation">5) Reliability controls: retry, session refinement, reconciliation<a class="headerlink" href="#5-reliability-controls-retry-session-refinement-reconciliation" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pydantic import BaseModel
+
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    ReconciliationConfig,
+    RetryPolicy,
+    RuntimeConfig,
+    SessionRefinementConfig,
+)
+
+
+class EventAttrs(BaseModel):
+    severity: str | None = None
+
+
+request = ExtractRequest(
+    documents=&quot;Outage started at 09:10 UTC. Service recovered at 09:42 UTC.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract operational events.&quot;,
+        schema=EntitySchemaSet(
+            entities=[EntitySpec(name=&quot;event&quot;, attributes_model=EventAttrs)]
+        ),
+        examples=[
+            ExtractionExample(
+                text=&quot;Incident started at 10:00.&quot;,
+                extractions=[
+                    ExampleExtraction(
+                        entity=&quot;event&quot;,
+                        text=&quot;Incident started at 10:00&quot;,
+                        attributes={&quot;severity&quot;: &quot;high&quot;},
+                    )
+                ],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(
+        model=&quot;deepseek/deepseek-chat&quot;,
+        retry=RetryPolicy(
+            max_attempts=4,
+            initial_backoff_seconds=0.8,
+            max_backoff_seconds=10.0,
+            backoff_multiplier=2.0,
+            retry_on_rate_limit=True,
+            retry_on_transient_errors=True,
+            auto_resume_paused_runs=True,
+            max_pause_resumes=5,
+        ),
+        session_refinement=SessionRefinementConfig(
+            enabled=True,
+            max_turns=2,
+            context_chars=400,
+        ),
+        reconciliation=ReconciliationConfig(
+            enabled=True,
+            use_workforce=True,
+            min_mentions_for_claim=1,
+            max_claims=100,
+        ),
+    ),
+)
+
+result = sourcery.extract(request)
+print(result.warnings)
+</code></pre>
+<h2 id="6-saveload-jsonl-reviewer-html">6) Save/load JSONL + reviewer HTML<a class="headerlink" href="#6-saveload-jsonl-reviewer-html" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pathlib import Path
+from pydantic import BaseModel
+
+import sourcery
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+)
+from sourcery.io import load_document_results_jsonl, save_extract_result_jsonl, write_reviewer_html
+
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+
+request = ExtractRequest(
+    documents=&quot;Alice is CEO. Bob is CTO.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract people.&quot;,
+        schema=EntitySchemaSet(
+            entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]
+        ),
+        examples=[
+            ExtractionExample(
+                text=&quot;Carol is CFO.&quot;,
+                extractions=[
+                    ExampleExtraction(entity=&quot;person&quot;, text=&quot;Carol&quot;, attributes={&quot;role&quot;: &quot;CFO&quot;})
+                ],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = sourcery.extract(request)
+
+out_dir = Path(&quot;./output&quot;)
+out_dir.mkdir(parents=True, exist_ok=True)
+
+jsonl_path = out_dir / &quot;result.jsonl&quot;
+html_path = out_dir / &quot;reviewer.html&quot;
+
+save_extract_result_jsonl(result, jsonl_path)
+loaded_docs = load_document_results_jsonl(jsonl_path)
+write_reviewer_html(loaded_docs[0], html_path, title=&quot;Extraction Review&quot;)
+
+print(jsonl_path, html_path)
+</code></pre>
+<h2 id="7-notebookhtml-visualization">7) Notebook/HTML visualization<a class="headerlink" href="#7-notebookhtml-visualization" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from sourcery.io import visualize
+
+# From JSONL path (returns HTML object in notebook, raw HTML string otherwise)
+content = visualize(&quot;./output/result.jsonl&quot;, animation_speed=0.8, show_legend=True)
+print(type(content))
+</code></pre>
+<h2 id="8-replay-a-blackgeorge-run-from-provenance">8) Replay a BlackGeorge run from provenance<a class="headerlink" href="#8-replay-a-blackgeorge-run-from-provenance" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from pydantic import BaseModel
+
+from sourcery.contracts import (
+    EntitySchemaSet,
+    EntitySpec,
+    ExtractRequest,
+    ExtractionExample,
+    ExtractionTask,
+    ExampleExtraction,
+    RuntimeConfig,
+)
+from sourcery.runtime import SourceryEngine
+
+
+class PersonAttrs(BaseModel):
+    role: str | None = None
+
+
+engine = SourceryEngine()
+request = ExtractRequest(
+    documents=&quot;Alice is CEO.&quot;,
+    task=ExtractionTask(
+        instructions=&quot;Extract people.&quot;,
+        schema=EntitySchemaSet(
+            entities=[EntitySpec(name=&quot;person&quot;, attributes_model=PersonAttrs)]
+        ),
+        examples=[
+            ExtractionExample(
+                text=&quot;Bob is CTO.&quot;,
+                extractions=[
+                    ExampleExtraction(entity=&quot;person&quot;, text=&quot;Bob&quot;, attributes={&quot;role&quot;: &quot;CTO&quot;})
+                ],
+            )
+        ],
+    ),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+)
+
+result = engine.extract(request)
+
+raw_run_id = None
+for doc in result.documents:
+    for extraction in doc.extractions:
+        if extraction.provenance.raw_run_id:
+            raw_run_id = extraction.provenance.raw_run_id
+            break
+    if raw_run_id:
+        break
+
+if raw_run_id:
+    replay_payload, replay_events = engine.replay_run(request, raw_run_id)
+    print(replay_payload)
+    print(len(replay_events))
+</code></pre>
+<h2 id="9-error-handling-with-typed-exceptions">9) Error handling with typed exceptions<a class="headerlink" href="#9-error-handling-with-typed-exceptions" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from sourcery.exceptions import (
+    ExampleValidationError,
+    SourceryProviderError,
+    SourceryRateLimitError,
+    SourceryRetryExhaustedError,
+)
+
+try:
+    # call sourcery.extract(...)
+    pass
+except ExampleValidationError as exc:
+    print(&quot;Example alignment failed:&quot;, exc)
+except SourceryRateLimitError as exc:
+    print(&quot;Provider rate-limited:&quot;, exc)
+except SourceryRetryExhaustedError as exc:
+    print(&quot;Retries exhausted after&quot;, exc.attempts, &quot;attempts&quot;)
+except SourceryProviderError as exc:
+    print(&quot;Provider/runtime error:&quot;, exc)
+</code></pre>
+<h2 id="10-benchmark-command">10) Benchmark command<a class="headerlink" href="#10-benchmark-command" title="Permanent link">#</a></h2>
+<pre><code class="language-bash">uv run sourcery-benchmark \
+  --text-types english,japanese,french,spanish \
+  --max-chars 4500 \
+  --max-passes 2 \
+  --batch-concurrency 4 \
+  --sourcery-model deepseek/deepseek-chat
+</code></pre>
+<p>Compatibility wrapper:</p>
+<pre><code class="language-bash">uv run benchmark_compare.py --text-types english
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../build-a-pipeline/" class="btn btn-neutral float-left" title="Build A Pipeline"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../usage/" class="btn btn-neutral float-right" title="Usage">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../build-a-pipeline/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../usage/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

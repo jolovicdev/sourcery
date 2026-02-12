@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/reference/file-by-file-map/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>File-by-File Map - Sourcery Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "File-by-File Map";
+        var mkdocs_page_input_path = "reference/file-by-file-map.md";
+        var mkdocs_page_url = "/sourcery/reference/file-by-file-map/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Sourcery Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/quickstart/">Quickstart</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/system-overview/">System Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/pipeline-internals/">Pipeline Internals</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/runtime-internals/">Runtime Internals</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../public-api/">Public API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../data-contracts/">Data Contracts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../error-model/">Error Model</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">File-by-File Map</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#root-package">Root Package</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#contracts">Contracts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pipeline">Pipeline</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#runtime">Runtime</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#ingestion">Ingestion</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#io">IO</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#observability">Observability</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#benchmarks">Benchmarks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#test-and-utility-scripts">Test and Utility Scripts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tests">Tests</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Sourcery Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">File-by-File Map</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/reference/file-by-file-map.md">Edit on sourceryforge</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="file-by-file-map">File-by-File Map<a class="headerlink" href="#file-by-file-map" title="Permanent link">#</a></h1>
+<p>This map links each tracked module to its responsibility.</p>
+<h2 id="root-package">Root Package<a class="headerlink" href="#root-package" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/__init__.py</code>: public export surface.</li>
+<li><code>sourcery/api.py</code>: top-level extraction convenience functions.</li>
+<li><code>sourcery/exceptions.py</code>: typed exception taxonomy.</li>
+</ul>
+<h2 id="contracts">Contracts<a class="headerlink" href="#contracts" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/contracts/models.py</code>: all request/runtime/result primitives.</li>
+<li><code>sourcery/contracts/__init__.py</code>: contracts re-export surface.</li>
+</ul>
+<h2 id="pipeline">Pipeline<a class="headerlink" href="#pipeline" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/pipeline/chunking.py</code>: chunk planning and offsets.</li>
+<li><code>sourcery/pipeline/prompt_compiler.py</code>: prompt envelope generation.</li>
+<li><code>sourcery/pipeline/aligner.py</code>: candidate-to-text grounding.</li>
+<li><code>sourcery/pipeline/merger.py</code>: overlap resolution.</li>
+<li><code>sourcery/pipeline/example_validator.py</code>: few-shot validation.</li>
+<li><code>sourcery/pipeline/__init__.py</code>: pipeline re-exports.</li>
+</ul>
+<h2 id="runtime">Runtime<a class="headerlink" href="#runtime" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/runtime/base.py</code>: runtime protocol contracts.</li>
+<li><code>sourcery/runtime/interfaces.py</code>: protocol re-export.</li>
+<li><code>sourcery/runtime/engine.py</code>: extraction orchestration.</li>
+<li><code>sourcery/runtime/errors.py</code>: provider error classification.</li>
+<li><code>sourcery/runtime/model_gateway.py</code>: schema + parser bridge.</li>
+<li><code>sourcery/runtime/blackgeorge_models.py</code>: runtime payload adapters.</li>
+<li><code>sourcery/runtime/blackgeorge_protocols.py</code>: internal runtime typing.</li>
+<li><code>sourcery/runtime/blackgeorge_retry_mixin.py</code>: retry/backoff/pause logic.</li>
+<li><code>sourcery/runtime/blackgeorge_refinement_mixin.py</code>: refinement context handling.</li>
+<li><code>sourcery/runtime/blackgeorge_flow_mixin.py</code>: chunk extraction flow.</li>
+<li><code>sourcery/runtime/blackgeorge_reconciliation_mixin.py</code>: canonical-claim workflow.</li>
+<li><code>sourcery/runtime/blackgeorge_runtime.py</code>: composed runtime implementation.</li>
+<li><code>sourcery/runtime/__init__.py</code>: runtime public exports.</li>
+</ul>
+<h2 id="ingestion">Ingestion<a class="headerlink" href="#ingestion" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/ingest/loaders.py</code>: all source loaders.</li>
+<li><code>sourcery/ingest/__init__.py</code>: ingestion public exports.</li>
+</ul>
+<h2 id="io">IO<a class="headerlink" href="#io" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/io/jsonl.py</code>: JSONL persistence helpers.</li>
+<li><code>sourcery/io/visualization.py</code>: read-only visual viewer rendering.</li>
+<li><code>sourcery/io/reviewer.py</code>: interactive reviewer rendering and export.</li>
+<li><code>sourcery/io/__init__.py</code>: IO export surface.</li>
+</ul>
+<h2 id="observability">Observability<a class="headerlink" href="#observability" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/observability/trace.py</code>: run event collection and trace finalization.</li>
+<li><code>sourcery/observability/__init__.py</code>: observability exports.</li>
+</ul>
+<h2 id="benchmarks">Benchmarks<a class="headerlink" href="#benchmarks" title="Permanent link">#</a></h2>
+<ul>
+<li><code>sourcery/benchmarks/config.py</code>: benchmark config constants.</li>
+<li><code>sourcery/benchmarks/gutenberg.py</code>: text sampling helpers.</li>
+<li><code>sourcery/benchmarks/run.py</code>: benchmark CLI implementation.</li>
+<li><code>sourcery/benchmarks/__init__.py</code>: benchmark exports.</li>
+</ul>
+<h2 id="test-and-utility-scripts">Test and Utility Scripts<a class="headerlink" href="#test-and-utility-scripts" title="Permanent link">#</a></h2>
+<ul>
+<li><code>benchmark_compare.py</code>: thin CLI entry wrapper for benchmark run.</li>
+</ul>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">#</a></h2>
+<ul>
+<li><code>tests/conftest.py</code>: shared fixtures and fake runtimes.</li>
+<li><code>tests/test_contracts.py</code>: contract validation.</li>
+<li><code>tests/test_chunking.py</code>: chunk planning behavior.</li>
+<li><code>tests/test_aligner.py</code>: alignment behavior.</li>
+<li><code>tests/test_merger.py</code>: merge precedence behavior.</li>
+<li><code>tests/test_example_validator.py</code>: example alignment validation.</li>
+<li><code>tests/test_engine.py</code>: engine orchestration behavior.</li>
+<li><code>tests/test_api.py</code>: public API function behavior.</li>
+<li><code>tests/test_ingest.py</code>: ingestion loader behavior.</li>
+<li><code>tests/test_io.py</code>: JSONL/viewer/reviewer behavior.</li>
+<li><code>tests/test_runtime_errors.py</code>: runtime error classifier behavior.</li>
+<li><code>tests/test_model_gateway.py</code>: response parsing behavior.</li>
+<li><code>tests/test_blackgeorge_runtime.py</code>: runtime mixin regressions.</li>
+<li><code>tests/test_benchmarks.py</code>: benchmark utility behavior.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../error-model/" class="btn btn-neutral float-left" title="Error Model"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/jolovicdev/sourcery" class="fa fa-code-fork" style="color: #fcfcfc"> sourceryforge</a>
+        </span>
+    
+    
+      <span><a href="../error-model/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
