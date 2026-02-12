@@ -1,0 +1,69 @@
+site_name: Sourcery Documentation
+site_description: Build and run schema-first extraction pipelines with Sourcery.
+site_url: !ENV [SITE_URL, "https://jolovicdev.github.io/sourcery/"]
+repo_url: !ENV [REPO_URL, "https://github.com/jolovicdev/sourcery"]
+repo_name: sourceryforge
+
+theme:
+  name: readthedocs
+
+plugins:
+  - search
+  - llmstxt:
+      full_output: llms-full.txt
+      markdown_description: >
+        Sourcery is a schema-first extraction framework for converting unstructured text,
+        files, and URLs into typed, grounded entities with traceability and reviewable output.
+      sections:
+        Getting Started:
+          - index.md: Documentation home and platform overview.
+          - getting-started/installation.md: Installation, optional extras, and environment setup.
+          - getting-started/quickstart.md: End-to-end quickstart with JSONL and HTML outputs.
+        Guides:
+          - guides/build-a-pipeline.md: Mixed-source extraction pipeline workflow.
+          - guides/code-examples.md: Runnable API examples for extraction, ingestion, IO, and benchmarking.
+          - guides/usage.md: End-to-end usage reference and API patterns.
+          - guides/runtime-and-tuning.md: Runtime controls, retries, and tuning profiles.
+          - guides/ingestion.md: Source loading and ingestion behavior.
+          - guides/outputs-and-reviewer.md: JSONL persistence and reviewer workflows.
+          - guides/benchmarking.md: Benchmark CLI usage and output format.
+          - guides/testing-and-validation.md: Test, lint, and type-check commands.
+        Architecture:
+          - architecture/system-overview.md: Module boundaries and execution flow.
+          - architecture/pipeline-internals.md: Chunking, alignment, merge, and prompt internals.
+          - architecture/runtime-internals.md: Engine/runtime orchestration internals.
+        Reference:
+          - reference/public-api.md: Public exports and top-level API surface.
+          - reference/data-contracts.md: Pydantic contract and schema model reference.
+          - reference/error-model.md: Exception hierarchy and error handling model.
+          - reference/file-by-file-map.md: File-level responsibilities across modules.
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+  - Guides:
+      - Build A Pipeline: guides/build-a-pipeline.md
+      - Code Examples: guides/code-examples.md
+      - Usage: guides/usage.md
+      - Runtime And Tuning: guides/runtime-and-tuning.md
+      - Ingestion: guides/ingestion.md
+      - Outputs And Reviewer: guides/outputs-and-reviewer.md
+      - Benchmarking: guides/benchmarking.md
+      - Testing And Validation: guides/testing-and-validation.md
+  - Architecture:
+      - System Overview: architecture/system-overview.md
+      - Pipeline Internals: architecture/pipeline-internals.md
+      - Runtime Internals: architecture/runtime-internals.md
+  - Reference:
+      - Public API: reference/public-api.md
+      - Data Contracts: reference/data-contracts.md
+      - Error Model: reference/error-model.md
+      - File-by-File Map: reference/file-by-file-map.md
+
+markdown_extensions:
+  - toc:
+      permalink: "#"
+  - tables
+  - fenced_code

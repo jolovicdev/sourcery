@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sourceryforge"
+version = "0.1.0"
+description = "Schema-first LLM extraction framework with entity grounding and deterministic post-processing"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+repository = "https://github.com/jolovicdev/sourcery"
+keywords = ["llm", "extraction", "entity-extraction", "document-ai", "pydantic", "langchain-alternative", "schema-first", "nlp"]
+authors = [{ name = "Dušan Jolović" }]
+
+dependencies = [
+  "pydantic>=2.7.0",
+  "blackgeorge>=1.1.4",
+  "pytest>=9.0.2",
+]
+
+[project.scripts]
+sourcery-benchmark = "sourcery.benchmarks.run:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.23.0",
+  "mypy>=1.10.0",
+  "ruff>=0.5.0",
+]
+docs = [
+  "mkdocs>=1.6.0",
+  "mkdocs-llmstxt",
+]
+benchmark = [
+  "langextract[openai]>=1.1.1",
+]
+ingest = [
+  "pypdf>=5.0.0",
+  "pillow>=10.0.0",
+  "pytesseract>=0.3.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sourcery"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
