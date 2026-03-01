@@ -15,7 +15,7 @@ authors = [{ name = "Dušan Jolović" }]
 
 dependencies = [
   "pydantic>=2.7.0",
-  "blackgeorge>=1.1.4",
+  "blackgeorge==1.1.9",
   "pytest>=9.0.2",
 ]
 

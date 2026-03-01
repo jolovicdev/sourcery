@@ -268,7 +268,7 @@ wheels = [
 
 [[package]]
 name = "blackgeorge"
-version = "1.1.5"
+version = "1.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "chromadb" },
@@ -277,9 +277,9 @@ dependencies = [
     { name = "mcp" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a9/c2/14f511d2edd7c95dd08255f81c37341a11572e4fa23d871b09b845352de7/blackgeorge-1.1.5.tar.gz", hash = "sha256:489816f266a275ce82ec00feaa77b60f7108c7d2e0aada006ba23c3b98335707", size = 46342, upload-time = "2026-02-07T21:34:44.068Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/5a/51c5dc303bd70f08c36cfb1089b3c1dac16058c352799c9b15503dc6f786/blackgeorge-1.1.9.tar.gz", hash = "sha256:d358197a66b09d8773d82e4cf0b5d4b357c0858660c81a014a613644df24824c", size = 59789, upload-time = "2026-02-25T13:02:59.738Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/ad/d54dd25dcd99c70bb45e4b6833fe5c085615eedf9469078a91d02c07d601/blackgeorge-1.1.5-py3-none-any.whl", hash = "sha256:5195905e8fa847a6bd30a9261cb81a30987a2557905aa77b82e8ef98a3b22426", size = 68805, upload-time = "2026-02-07T21:34:42.965Z" },
+    { url = "https://files.pythonhosted.org/packages/25/83/ad72840e1bf1357e9f7bf113e0a1fa5e47ce5eb6f2519811366e7a2dc1a1/blackgeorge-1.1.9-py3-none-any.whl", hash = "sha256:49db640ffcbc408bc2fe0a1865bd73c9383397fc6e9d47a2dc482b4f4cccdd38", size = 85862, upload-time = "2026-02-25T13:02:57.159Z" },
 ]
 
 [[package]]
@@ -1331,7 +1331,7 @@ wheels = [
 
 [[package]]
 name = "litellm"
-version = "1.81.10"
+version = "1.81.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1347,9 +1347,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/fc/78887158b4057835ba2c647a1bd4da650fd79142f8412c6d0bbe6d8c6081/litellm-1.81.10.tar.gz", hash = "sha256:8d769a7200888e1295592af5ce5cb0ff035832250bd0102a4ca50acf5820ca50", size = 16297572, upload-time = "2026-02-11T00:17:47.347Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/80/b6cb799e7100953d848e106d0575db34c75bc3b57f31f2eefdfb1e23655f/litellm-1.81.13.tar.gz", hash = "sha256:083788d9c94e3371ff1c42e40e0e8198c497772643292a65b1bc91a3b3b537ea", size = 16562861, upload-time = "2026-02-17T02:00:47.466Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/bb/3f3cc3d79657bc9daaa1319ec3a9d75e4889fc88d07e327f0ac02cd2ac7d/litellm-1.81.10-py3-none-any.whl", hash = "sha256:9efa1cbe61ac051f6500c267b173d988ff2d511c2eecf1c8f2ee546c0870747c", size = 14457931, upload-time = "2026-02-11T00:17:43.431Z" },
+    { url = "https://files.pythonhosted.org/packages/be/f3/fffb7932870163cea7addc392165647a9a8a5489967de486c854226f1141/litellm-1.81.13-py3-none-any.whl", hash = "sha256:ae4aea2a55e85993f5f6dd36d036519422d24812a1a3e8540d9e987f2d7a4304", size = 14587505, upload-time = "2026-02-17T02:00:44.22Z" },
 ]
 
 [[package]]
@@ -3142,7 +3142,7 @@ ingest = [
 
 [package.metadata]
 requires-dist = [
-    { name = "blackgeorge", specifier = ">=1.1.4" },
+    { name = "blackgeorge", specifier = "==1.1.9" },
     { name = "langextract", extras = ["openai"], marker = "extra == 'benchmark'", specifier = ">=1.1.1" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6.0" },
     { name = "mkdocs-llmstxt", marker = "extra == 'docs'" },
