@@ -37,6 +37,10 @@ From `sourcery.ingest`:
 - `load_pdf_document(...)`
 - `load_html_document(...)`
 - `load_url_document(...)`
+- `load_vlm_ocr_document(...)`
+- `load_vlm_ocr_documents(...)`
+- `VLMOCRBackend` — protocol for custom VLM OCR backends
+- `BlackGeorgeVLMOCRBackend(...)` — blackgeorge multimodal implementation
 Top-level shortcut (`import sourcery`) includes only:
 
 - `load_source_document(...)`

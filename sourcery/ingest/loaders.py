@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 from sourcery.contracts import SourceDocument
 from sourcery.exceptions import SourceryDependencyError, SourceryIngestionError
+from sourcery.ingest.vlm_ocr import VLMOCRBackend
 
 _TEXT_FILE_SUFFIXES = {".txt", ".md", ".rst", ".csv", ".json", ".jsonl", ".yaml", ".yml"}
 _HTML_SUFFIXES = {".html", ".htm"}
@@ -205,4 +206,43 @@ def load_source_documents(
     loaded: list[SourceDocument] = []
     for index, source in enumerate(sources):
         loaded.append(load_source_document(source, document_id=f"doc_{index}", metadata=metadata))
+    return loaded
+
+
+def load_vlm_ocr_document(
+    path: str | Path,
+    *,
+    backend: VLMOCRBackend,
+    document_id: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    prompt: str | None = None,
+) -> SourceDocument:
+    image_path = Path(path)
+    if not image_path.exists():
+        raise SourceryIngestionError(f"Image file does not exist: {image_path}")
+    text = backend.extract_text(image_path=image_path, prompt=prompt)
+    if not text.strip():
+        raise SourceryIngestionError(f"VLM OCR produced empty text for: {image_path}")
+    return SourceDocument(
+        document_id=document_id or image_path.stem,
+        text=text,
+        metadata=_normalize_metadata(metadata, source_type="vlm_ocr", source=str(image_path)),
+    )
+
+
+def load_vlm_ocr_documents(
+    paths: Sequence[str | Path],
+    *,
+    backend: VLMOCRBackend,
+    metadata: dict[str, Any] | None = None,
+    prompt: str | None = None,
+) -> list[SourceDocument]:
+    loaded: list[SourceDocument] = []
+    for index, path in enumerate(paths):
+        loaded.append(
+            load_vlm_ocr_document(
+                path, backend=backend, document_id=f"ocr_doc_{index}",
+                metadata=metadata, prompt=prompt,
+            )
+        )
     return loaded
