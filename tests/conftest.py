@@ -123,6 +123,23 @@ class FakeRuntime:
 
 class FakeReconciliationRuntime(FakeRuntime):
     reconcile_called = False
+    areconcile_called = False
+
+    async def areconcile_document(
+        self,
+        *,
+        run_id: str,
+        document: SourceDocument,
+        extractions: Sequence[AlignedExtraction],
+        task_instructions: str,
+    ) -> DocumentReconciliationReport:
+        FakeReconciliationRuntime.areconcile_called = True
+        return self.reconcile_document(
+            run_id=run_id,
+            document=document,
+            extractions=extractions,
+            task_instructions=task_instructions,
+        )
 
     def reconcile_document(
         self,

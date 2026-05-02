@@ -56,3 +56,15 @@ class DocumentReconciliationRuntime(Protocol):
         extractions: Sequence[AlignedExtraction],
         task_instructions: str,
     ) -> DocumentReconciliationReport: ...
+
+
+@runtime_checkable
+class AsyncDocumentReconciliationRuntime(Protocol):
+    async def areconcile_document(
+        self,
+        *,
+        run_id: str,
+        document: SourceDocument,
+        extractions: Sequence[AlignedExtraction],
+        task_instructions: str,
+    ) -> DocumentReconciliationReport: ...

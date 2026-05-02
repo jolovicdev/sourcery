@@ -251,3 +251,53 @@ class BlackGeorgeRuntime(
                 canonical_claims=fallback_claims,
                 warnings=[f"Reconciliation fallback ({type(exc).__name__}): {exc}"],
             )
+
+    async def areconcile_document(
+        self,
+        *,
+        run_id: str,
+        document: SourceDocument,
+        extractions: Sequence[AlignedExtraction],
+        task_instructions: str,
+    ) -> DocumentReconciliationReport:
+        resolved_extractions = list(extractions)
+        if not resolved_extractions:
+            return DocumentReconciliationReport(
+                document_id=document.document_id,
+                reconciled_extractions=[],
+            )
+
+        if not self._runtime_config.reconciliation.enabled:
+            return DocumentReconciliationReport(
+                document_id=document.document_id,
+                reconciled_extractions=resolved_extractions,
+            )
+
+        fallback_claims = self._fallback_canonical_claims(
+            document_id=document.document_id,
+            extractions=resolved_extractions,
+        )
+        if not self._runtime_config.reconciliation.use_workforce:
+            return DocumentReconciliationReport(
+                document_id=document.document_id,
+                reconciled_extractions=resolved_extractions,
+                canonical_claims=fallback_claims,
+            )
+
+        try:
+            reconciliation_report = await self._arun_reconciliation_workforce(
+                run_id=run_id,
+                document=document,
+                extractions=resolved_extractions,
+                task_instructions=task_instructions,
+            )
+            if not reconciliation_report.canonical_claims:
+                reconciliation_report.canonical_claims = fallback_claims
+            return reconciliation_report
+        except SourceryRuntimeError as exc:
+            return DocumentReconciliationReport(
+                document_id=document.document_id,
+                reconciled_extractions=resolved_extractions,
+                canonical_claims=fallback_claims,
+                warnings=[f"Reconciliation fallback ({type(exc).__name__}): {exc}"],
+            )

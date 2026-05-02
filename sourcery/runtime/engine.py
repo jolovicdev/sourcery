@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Generator, Sequence
-from typing import Callable, Union
+from dataclasses import dataclass, field
+from typing import Any, Callable, Union
 
 from sourcery.contracts import (
     AlignedExtraction,
@@ -30,9 +31,40 @@ from sourcery.pipeline import (
     merge_non_overlapping,
     plan_chunks,
 )
-from sourcery.runtime.base import ChunkRuntime
+from sourcery.runtime.base import AsyncDocumentReconciliationRuntime, ChunkRuntime
 from sourcery.runtime.base import DocumentReconciliationRuntime
 from sourcery.runtime.blackgeorge_runtime import BlackGeorgeRuntime
+
+
+def _extraction_key(ext: AlignedExtraction) -> tuple[Any, ...]:
+    return (
+        ext.entity,
+        ext.text,
+        ext.char_start,
+        ext.char_end,
+        ext.alignment_status,
+        ext.provenance.pass_id,
+        ext.provenance.chunk_id,
+        id(ext),
+    )
+
+
+@dataclass
+class EngineRunState:
+    run_id: str
+    documents: list[SourceDocument]
+    runtime: ChunkRuntime
+    reconciliation_runtime: DocumentReconciliationRuntime | None
+    metrics: RunMetrics
+    trace_collector: RunTraceCollector
+    warnings: list[str]
+    document_extractions: dict[str, list[AlignedExtraction]] = field(
+        default_factory=lambda: defaultdict(list)
+    )
+    pass_count: int = 0
+    total_candidates: int = 0
+    unresolved_total: int = 0
+    chunk_ids: list[str] = field(default_factory=list)
 
 
 class SourceryEngine:
@@ -47,11 +79,19 @@ class SourceryEngine:
             self._prompt_compiler = PromptCompiler()
             self._example_validator = ExampleValidator()
             self._trace_collector_factory = RunTraceCollector
+            self._chunk_planner = plan_chunks
+            self._aligner = align_candidates
+            self._merger = merge_non_overlapping
         else:
             self._prompt_compiler = dependencies.prompt_compiler
             self._example_validator = dependencies.example_validator
             self._trace_collector_factory = dependencies.trace_collector_factory
             self._runtime_factory = dependencies.runtime_factory
+            self._chunk_planner = dependencies.chunk_planner
+            self._aligner = dependencies.aligner
+            self._merger = dependencies.merger
+
+    # -- public API ------------------------------------------------------------
 
     def extract(self, request: ExtractRequest) -> ExtractResult:
         return self._execute(request=request)
@@ -74,6 +114,8 @@ class SourceryEngine:
         replay, events = runtime.replay_run(raw_run_id)
         return replay, events
 
+    # -- helpers ---------------------------------------------------------------
+
     def _make_runtime(self, request: ExtractRequest) -> ChunkRuntime:
         return self._runtime_factory(
             request.runtime,
@@ -84,110 +126,121 @@ class SourceryEngine:
     def _normalize_documents(self, request: ExtractRequest) -> list[SourceDocument]:
         return request.normalize_documents()
 
-    def _execute(self, *, request: ExtractRequest) -> ExtractResult:
+    def _start_run(self, request: ExtractRequest) -> EngineRunState:
         run_id = new_run_id()
-        started_at = utc_now()
-        warnings: list[str] = []
-
         documents = self._normalize_documents(request)
 
         issues = self._example_validator.validate(
             task=request.task,
             fuzzy_threshold=request.options.fuzzy_alignment_threshold,
         )
-        warnings.extend(self._example_validator.enforce_or_warn(task=request.task, issues=issues))
-
-        metrics = RunMetrics(
-            documents_total=len(documents),
-            started_at=started_at,
+        warnings: list[str] = []
+        warnings.extend(
+            self._example_validator.enforce_or_warn(task=request.task, issues=issues)
         )
-        trace_collector = self._trace_collector_factory(run_id=run_id, model=request.runtime.model)
 
         runtime = self._make_runtime(request)
         reconciliation_runtime: DocumentReconciliationRuntime | None = None
         if isinstance(runtime, DocumentReconciliationRuntime):
             reconciliation_runtime = runtime
-        document_extractions: dict[str, list[AlignedExtraction]] = defaultdict(list)
 
-        pass_count = 0
-        total_candidates = 0
-        unresolved_total = 0
-        chunk_ids: list[str] = []
+        metrics = RunMetrics(
+            documents_total=len(documents),
+            started_at=utc_now(),
+        )
+        trace_collector = self._trace_collector_factory(
+            run_id=run_id, model=request.runtime.model
+        )
 
-        for pass_id in range(1, request.options.max_passes + 1):
-            pass_count = pass_id
-            chunks = plan_chunks(
-                documents,
-                pass_id=pass_id,
-                max_chunk_chars=request.options.max_chunk_chars,
-                context_window_chars=request.options.context_window_chars,
-            )
-            chunk_ids.extend(chunk.chunk_id for chunk in chunks)
-            metrics.chunks_total += len(chunks)
+        return EngineRunState(
+            run_id=run_id,
+            documents=documents,
+            runtime=runtime,
+            reconciliation_runtime=reconciliation_runtime,
+            metrics=metrics,
+            trace_collector=trace_collector,
+            warnings=warnings,
+        )
 
-            reports = self._run_runtime_pass(
-                runtime=runtime,
-                run_id=run_id,
-                pass_id=pass_id,
-                chunks=chunks,
-                task_instructions=request.task.instructions,
-                batch_concurrency=request.options.batch_concurrency,
-            )
+    def _plan_pass(
+        self, state: EngineRunState, request: ExtractRequest, pass_id: int
+    ) -> list[TextChunk]:
+        state.pass_count = pass_id
+        chunks = self._chunk_planner(
+            state.documents,
+            pass_id=pass_id,
+            max_chunk_chars=request.options.max_chunk_chars,
+            context_window_chars=request.options.context_window_chars,
+        )
+        state.chunk_ids.extend(chunk.chunk_id for chunk in chunks)
+        state.metrics.chunks_total += len(chunks)
+        return chunks
 
-            additions_this_pass = 0
+    def _process_report(
+        self,
+        state: EngineRunState,
+        report: ChunkExtractionReport,
+        request: ExtractRequest,
+        pass_id: int,
+    ) -> int:
+        state.trace_collector.add_report_events(report)
+        state.total_candidates += len(report.candidates)
 
-            for report in reports:
-                trace_collector.add_report_events(report)
-                total_candidates += len(report.candidates)
-                provenance = ExtractionProvenance(
-                    run_id=run_id,
-                    pass_id=pass_id,
-                    chunk_id=report.chunk.chunk_id,
-                    worker_name=report.worker_name,
-                    model=report.model,
-                    raw_run_id=report.raw_run_id,
-                )
-                alignment = align_candidates(
-                    candidates=report.candidates,
-                    chunk=report.chunk,
-                    schema=request.task.entity_schema,
-                    options=request.options,
-                    provenance_base=provenance,
-                )
-                unresolved_total += alignment.unresolved_count
-                warnings.extend(report.warnings)
-                warnings.extend(alignment.warnings)
+        provenance = ExtractionProvenance(
+            run_id=state.run_id,
+            pass_id=pass_id,
+            chunk_id=report.chunk.chunk_id,
+            worker_name=report.worker_name,
+            model=report.model,
+            raw_run_id=report.raw_run_id,
+        )
+        alignment = self._aligner(
+            candidates=report.candidates,
+            chunk=report.chunk,
+            schema=request.task.entity_schema,
+            options=request.options,
+            provenance_base=provenance,
+        )
+        state.unresolved_total += alignment.unresolved_count
+        state.warnings.extend(report.warnings)
+        state.warnings.extend(alignment.warnings)
 
-                merged, additions = merge_non_overlapping(
-                    document_extractions[report.chunk.document_id],
-                    alignment.aligned,
-                )
-                document_extractions[report.chunk.document_id] = merged
-                additions_this_pass += additions
+        doc_id = report.chunk.document_id
+        merged, additions = self._merger(
+            state.document_extractions[doc_id],
+            alignment.aligned,
+        )
+        state.document_extractions[doc_id] = merged
+        return additions
 
-            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
-                break
-
-        metrics.candidates_total = total_candidates
-        metrics.unresolved_total = unresolved_total
-        metrics.passes_executed = pass_count
-        metrics.finished_at = utc_now()
+    def _finalize(
+        self,
+        state: EngineRunState,
+        request: ExtractRequest,
+    ) -> ExtractResult:
+        state.metrics.candidates_total = state.total_candidates
+        state.metrics.unresolved_total = state.unresolved_total
+        state.metrics.passes_executed = state.pass_count
+        state.metrics.finished_at = utc_now()
 
         documents_result: list[DocumentResult] = []
-        for document in documents:
-            extractions = document_extractions.get(document.document_id, [])
+        for document in state.documents:
+            extractions = state.document_extractions.get(document.document_id, [])
             canonical_claims = []
-            if reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
-                reconciliation = reconciliation_runtime.reconcile_document(
-                    run_id=run_id,
+            if (
+                state.reconciliation_runtime is not None
+                and request.runtime.reconciliation.enabled
+            ):
+                reconciliation = state.reconciliation_runtime.reconcile_document(
+                    run_id=state.run_id,
                     document=document,
                     extractions=extractions,
                     task_instructions=request.task.instructions,
                 )
                 extractions = reconciliation.reconciled_extractions
                 canonical_claims = reconciliation.canonical_claims
-                warnings.extend(reconciliation.warnings)
-                trace_collector.add_events(reconciliation.events)
+                state.warnings.extend(reconciliation.warnings)
+                state.trace_collector.add_events(reconciliation.events)
             documents_result.append(
                 DocumentResult(
                     document_id=document.document_id,
@@ -197,146 +250,62 @@ class SourceryEngine:
                 )
             )
 
-        metrics.extracted_total = sum(len(document.extractions) for document in documents_result)
+        state.metrics.extracted_total = sum(
+            len(document.extractions) for document in documents_result
+        )
 
-        run_trace = trace_collector.finalize(
-            chunk_ids=chunk_ids, pass_ids=list(range(1, pass_count + 1))
+        run_trace = state.trace_collector.finalize(
+            chunk_ids=state.chunk_ids,
+            pass_ids=list(range(1, state.pass_count + 1)),
         )
 
         return ExtractResult(
             documents=documents_result,
             run_trace=run_trace,
-            metrics=metrics,
-            warnings=warnings,
+            metrics=state.metrics,
+            warnings=state.warnings,
         )
 
-    def _execute_stream(
-        self, *, request: ExtractRequest
-    ) -> Generator[SourceryEngine.StreamEvent, None, ExtractResult]:
-        run_id = new_run_id()
-        started_at = utc_now()
-        warnings: list[str] = []
+    async def _finalize_async(
+        self,
+        state: EngineRunState,
+        request: ExtractRequest,
+    ) -> ExtractResult:
+        state.metrics.candidates_total = state.total_candidates
+        state.metrics.unresolved_total = state.unresolved_total
+        state.metrics.passes_executed = state.pass_count
+        state.metrics.finished_at = utc_now()
 
-        documents = self._normalize_documents(request)
-
-        issues = self._example_validator.validate(
-            task=request.task,
-            fuzzy_threshold=request.options.fuzzy_alignment_threshold,
-        )
-        warnings.extend(self._example_validator.enforce_or_warn(task=request.task, issues=issues))
-
-        metrics = RunMetrics(
-            documents_total=len(documents),
-            started_at=started_at,
-        )
-        trace_collector = self._trace_collector_factory(run_id=run_id, model=request.runtime.model)
-
-        runtime = self._make_runtime(request)
-        reconciliation_runtime: DocumentReconciliationRuntime | None = None
-        if isinstance(runtime, DocumentReconciliationRuntime):
-            reconciliation_runtime = runtime
-        document_extractions: dict[str, list[AlignedExtraction]] = defaultdict(list)
-
-        pass_count = 0
-        total_candidates = 0
-        unresolved_total = 0
-        chunk_ids: list[str] = []
-
-        for pass_id in range(1, request.options.max_passes + 1):
-            pass_count = pass_id
-            chunks = plan_chunks(
-                documents,
-                pass_id=pass_id,
-                max_chunk_chars=request.options.max_chunk_chars,
-                context_window_chars=request.options.context_window_chars,
-            )
-            chunk_ids.extend(chunk.chunk_id for chunk in chunks)
-            metrics.chunks_total += len(chunks)
-
-            reports = self._run_runtime_pass(
-                runtime=runtime,
-                run_id=run_id,
-                pass_id=pass_id,
-                chunks=chunks,
-                task_instructions=request.task.instructions,
-                batch_concurrency=request.options.batch_concurrency,
-            )
-
-            additions_this_pass = 0
-
-            for report in reports:
-                trace_collector.add_report_events(report)
-                total_candidates += len(report.candidates)
-                provenance = ExtractionProvenance(
-                    run_id=run_id,
-                    pass_id=pass_id,
-                    chunk_id=report.chunk.chunk_id,
-                    worker_name=report.worker_name,
-                    model=report.model,
-                    raw_run_id=report.raw_run_id,
-                )
-                alignment = align_candidates(
-                    candidates=report.candidates,
-                    chunk=report.chunk,
-                    schema=request.task.entity_schema,
-                    options=request.options,
-                    provenance_base=provenance,
-                )
-                unresolved_total += alignment.unresolved_count
-                warnings.extend(report.warnings)
-                warnings.extend(alignment.warnings)
-
-                doc_extractions = document_extractions[report.chunk.document_id]
-                merged, additions = merge_non_overlapping(
-                    doc_extractions,
-                    alignment.aligned,
-                )
-                document_extractions[report.chunk.document_id] = merged
-                additions_this_pass += additions
-
-                for extraction in alignment.aligned:
-                    yield StreamExtractionAdded(
-                        document_id=report.chunk.document_id,
-                        extraction=extraction,
+        documents_result: list[DocumentResult] = []
+        for document in state.documents:
+            extractions = state.document_extractions.get(document.document_id, [])
+            canonical_claims = []
+            if (
+                state.reconciliation_runtime is not None
+                and request.runtime.reconciliation.enabled
+            ):
+                if isinstance(
+                    state.reconciliation_runtime, AsyncDocumentReconciliationRuntime
+                ):
+                    reconciliation = (
+                        await state.reconciliation_runtime.areconcile_document(
+                            run_id=state.run_id,
+                            document=document,
+                            extractions=extractions,
+                            task_instructions=request.task.instructions,
+                        )
                     )
-                yield StreamChunkDone(
-                    chunk_id=report.chunk.chunk_id,
-                    document_id=report.chunk.document_id,
-                    pass_id=pass_id,
-                    candidates_found=len(report.candidates),
-                )
-
-            yield StreamPassDone(
-                pass_id=pass_id,
-                additions_this_pass=additions_this_pass,
-                extractions_so_far=sum(
-                    len(extractions) for extractions in document_extractions.values()
-                ),
-            )
-
-            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
-                break
-
-        metrics.candidates_total = total_candidates
-        metrics.unresolved_total = unresolved_total
-        metrics.passes_executed = pass_count
-        metrics.finished_at = utc_now()
-
-        documents_result: list[DocumentResult] = []
-        for document in documents:
-            extractions = document_extractions.get(document.document_id, [])
-            canonical_claims = []
-            if reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
-                reconciliation = reconciliation_runtime.reconcile_document(
-                    run_id=run_id,
-                    document=document,
-                    extractions=extractions,
-                    task_instructions=request.task.instructions,
-                )
+                else:
+                    reconciliation = state.reconciliation_runtime.reconcile_document(
+                        run_id=state.run_id,
+                        document=document,
+                        extractions=extractions,
+                        task_instructions=request.task.instructions,
+                    )
                 extractions = reconciliation.reconciled_extractions
                 canonical_claims = reconciliation.canonical_claims
-                warnings.extend(reconciliation.warnings)
-                trace_collector.add_events(reconciliation.events)
+                state.warnings.extend(reconciliation.warnings)
+                state.trace_collector.add_events(reconciliation.events)
             documents_result.append(
                 DocumentResult(
                     document_id=document.document_id,
@@ -346,18 +315,23 @@ class SourceryEngine:
                 )
             )
 
-        metrics.extracted_total = sum(len(document.extractions) for document in documents_result)
+        state.metrics.extracted_total = sum(
+            len(document.extractions) for document in documents_result
+        )
 
-        run_trace = trace_collector.finalize(
-            chunk_ids=chunk_ids, pass_ids=list(range(1, pass_count + 1))
+        run_trace = state.trace_collector.finalize(
+            chunk_ids=state.chunk_ids,
+            pass_ids=list(range(1, state.pass_count + 1)),
         )
 
         return ExtractResult(
             documents=documents_result,
             run_trace=run_trace,
-            metrics=metrics,
-            warnings=warnings,
+            metrics=state.metrics,
+            warnings=state.warnings,
         )
+
+    # -- runtime pass adapters --------------------------------------------------
 
     def _run_runtime_pass(
         self,
@@ -395,131 +369,109 @@ class SourceryEngine:
             batch_concurrency=batch_concurrency,
         )
 
-    async def _aexecute(self, *, request: ExtractRequest) -> ExtractResult:
-        run_id = new_run_id()
-        started_at = utc_now()
-        warnings: list[str] = []
+    # -- execution methods (thin orchestration) ---------------------------------
 
-        documents = self._normalize_documents(request)
-
-        issues = self._example_validator.validate(
-            task=request.task,
-            fuzzy_threshold=request.options.fuzzy_alignment_threshold,
-        )
-        warnings.extend(self._example_validator.enforce_or_warn(task=request.task, issues=issues))
-
-        metrics = RunMetrics(
-            documents_total=len(documents),
-            started_at=started_at,
-        )
-        trace_collector = self._trace_collector_factory(run_id=run_id, model=request.runtime.model)
-
-        runtime = self._make_runtime(request)
-        reconciliation_runtime: DocumentReconciliationRuntime | None = None
-        if isinstance(runtime, DocumentReconciliationRuntime):
-            reconciliation_runtime = runtime
-        document_extractions: dict[str, list[AlignedExtraction]] = defaultdict(list)
-
-        pass_count = 0
-        total_candidates = 0
-        unresolved_total = 0
-        chunk_ids: list[str] = []
+    def _execute(self, *, request: ExtractRequest) -> ExtractResult:
+        state = self._start_run(request)
+        batch_concurrency = request.options.batch_concurrency
 
         for pass_id in range(1, request.options.max_passes + 1):
-            pass_count = pass_id
-            chunks = plan_chunks(
-                documents,
-                pass_id=pass_id,
-                max_chunk_chars=request.options.max_chunk_chars,
-                context_window_chars=request.options.context_window_chars,
-            )
-            chunk_ids.extend(chunk.chunk_id for chunk in chunks)
-            metrics.chunks_total += len(chunks)
-
-            reports = await self._arun_runtime_pass(
-                runtime=runtime,
-                run_id=run_id,
+            chunks = self._plan_pass(state, request, pass_id)
+            reports = self._run_runtime_pass(
+                runtime=state.runtime,
+                run_id=state.run_id,
                 pass_id=pass_id,
                 chunks=chunks,
                 task_instructions=request.task.instructions,
-                batch_concurrency=request.options.batch_concurrency,
+                batch_concurrency=batch_concurrency,
             )
+            additions_this_pass = 0
+            for report in reports:
+                additions_this_pass += self._process_report(
+                    state, report, request, pass_id
+                )
+            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
+                break
 
+        return self._finalize(state, request)
+
+    async def _aexecute(self, *, request: ExtractRequest) -> ExtractResult:
+        state = self._start_run(request)
+        batch_concurrency = request.options.batch_concurrency
+
+        for pass_id in range(1, request.options.max_passes + 1):
+            chunks = self._plan_pass(state, request, pass_id)
+            reports = await self._arun_runtime_pass(
+                runtime=state.runtime,
+                run_id=state.run_id,
+                pass_id=pass_id,
+                chunks=chunks,
+                task_instructions=request.task.instructions,
+                batch_concurrency=batch_concurrency,
+            )
+            additions_this_pass = 0
+            for report in reports:
+                additions_this_pass += self._process_report(
+                    state, report, request, pass_id
+                )
+            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
+                break
+
+        return await self._finalize_async(state, request)
+
+    def _execute_stream(
+        self, *, request: ExtractRequest
+    ) -> Generator[SourceryEngine.StreamEvent, None, ExtractResult]:
+        state = self._start_run(request)
+
+        for pass_id in range(1, request.options.max_passes + 1):
+            chunks = self._plan_pass(state, request, pass_id)
             additions_this_pass = 0
 
-            for report in reports:
-                trace_collector.add_report_events(report)
-                total_candidates += len(report.candidates)
-                provenance = ExtractionProvenance(
-                    run_id=run_id,
+            for chunk in chunks:
+                reports = self._run_runtime_pass(
+                    runtime=state.runtime,
+                    run_id=state.run_id,
                     pass_id=pass_id,
-                    chunk_id=report.chunk.chunk_id,
-                    worker_name=report.worker_name,
-                    model=report.model,
-                    raw_run_id=report.raw_run_id,
+                    chunks=[chunk],
+                    task_instructions=request.task.instructions,
+                    batch_concurrency=1,
                 )
-                alignment = align_candidates(
-                    candidates=report.candidates,
-                    chunk=report.chunk,
-                    schema=request.task.entity_schema,
-                    options=request.options,
-                    provenance_base=provenance,
-                )
-                unresolved_total += alignment.unresolved_count
-                warnings.extend(report.warnings)
-                warnings.extend(alignment.warnings)
+                for report in reports:
+                    doc_id = report.chunk.document_id
+                    pre_merge_keys = {
+                        _extraction_key(ext)
+                        for ext in state.document_extractions[doc_id]
+                    }
+                    additions = self._process_report(
+                        state, report, request, pass_id
+                    )
+                    additions_this_pass += additions
+                    for extraction in state.document_extractions[doc_id]:
+                        if _extraction_key(extraction) not in pre_merge_keys:
+                            yield StreamExtractionAdded(
+                                document_id=doc_id, extraction=extraction
+                            )
+                    yield StreamChunkDone(
+                        chunk_id=report.chunk.chunk_id,
+                        document_id=doc_id,
+                        pass_id=pass_id,
+                        candidates_found=len(report.candidates),
+                    )
 
-                merged, additions = merge_non_overlapping(
-                    document_extractions[report.chunk.document_id],
-                    alignment.aligned,
-                )
-                document_extractions[report.chunk.document_id] = merged
-                additions_this_pass += additions
+            yield StreamPassDone(
+                pass_id=pass_id,
+                additions_this_pass=additions_this_pass,
+                extractions_so_far=sum(
+                    len(extractions)
+                    for extractions in state.document_extractions.values()
+                ),
+            )
 
             if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
                 break
 
-        metrics.candidates_total = total_candidates
-        metrics.unresolved_total = unresolved_total
-        metrics.passes_executed = pass_count
-        metrics.finished_at = utc_now()
-
-        documents_result: list[DocumentResult] = []
-        for document in documents:
-            extractions = document_extractions.get(document.document_id, [])
-            canonical_claims = []
-            if reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
-                reconciliation = reconciliation_runtime.reconcile_document(
-                    run_id=run_id,
-                    document=document,
-                    extractions=extractions,
-                    task_instructions=request.task.instructions,
-                )
-                extractions = reconciliation.reconciled_extractions
-                canonical_claims = reconciliation.canonical_claims
-                warnings.extend(reconciliation.warnings)
-                trace_collector.add_events(reconciliation.events)
-            documents_result.append(
-                DocumentResult(
-                    document_id=document.document_id,
-                    text=document.text,
-                    extractions=extractions,
-                    canonical_claims=canonical_claims,
-                )
-            )
-
-        metrics.extracted_total = sum(len(document.extractions) for document in documents_result)
-
-        run_trace = trace_collector.finalize(
-            chunk_ids=chunk_ids, pass_ids=list(range(1, pass_count + 1))
-        )
-
-        return ExtractResult(
-            documents=documents_result,
-            run_trace=run_trace,
-            metrics=metrics,
-            warnings=warnings,
-        )
+        return self._finalize(state, request)
 
 
 def extract(request: ExtractRequest, engine: SourceryEngine | None = None) -> ExtractResult:

@@ -225,7 +225,7 @@ class BlackGeorgeFlowMixin:
                 last_error = exc
                 if self._should_retry_exception(exc):
                     if attempts < self._retry.max_attempts:
-                        self._sleep_before_retry(attempts)
+                        await self._asleep_before_retry(attempts)
                         continue
                     raise SourceryRetryExhaustedError(
                         str(exc),
@@ -249,7 +249,7 @@ class BlackGeorgeFlowMixin:
             classified = classify_provider_errors(errors, context=context)
             if self._should_retry_errors(errors):
                 if attempts < self._retry.max_attempts:
-                    self._sleep_before_retry(attempts)
+                    await self._asleep_before_retry(attempts)
                     continue
                 raise SourceryRetryExhaustedError(
                     "; ".join(errors),

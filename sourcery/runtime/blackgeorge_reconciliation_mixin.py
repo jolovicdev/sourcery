@@ -170,6 +170,159 @@ class BlackGeorgeReconciliationMixin:
             context=context,
         )
 
+    async def _arun_workforce_with_retries(
+        self: BlackGeorgeReconciliationRuntime,
+        *,
+        workforce: Any,
+        job: Any,
+        context: ErrorContext,
+    ) -> Any:
+        attempts = 0
+        last_error: Exception | None = None
+
+        while attempts < self._retry.max_attempts:
+            attempts += 1
+            try:
+                report = await self._desk.arun(
+                    workforce, job, stream=self._runtime_config.stream
+                )
+            except Exception as exc:
+                last_error = exc
+                if self._should_retry_exception(exc):
+                    if attempts < self._retry.max_attempts:
+                        await self._asleep_before_retry(attempts)
+                        continue
+                    raise SourceryRetryExhaustedError(
+                        str(exc), attempts=attempts, context=context
+                    ) from exc
+                raise RuntimeIntegrationError(str(exc), context=context) from exc
+
+            report = await self._aresume_report_with_desk(report=report, context=context)
+            if report.status == "completed":
+                return report
+
+            errors = [error for error in getattr(report, "errors", []) or []]
+            if not errors:
+                errors = [f"Workforce returned status '{report.status}' without explicit errors"]
+            classified = classify_provider_errors(errors, context=context)
+            if self._should_retry_errors(errors):
+                if attempts < self._retry.max_attempts:
+                    await self._asleep_before_retry(attempts)
+                    continue
+                raise SourceryRetryExhaustedError(
+                    "; ".join(errors),
+                    attempts=attempts,
+                    context=context,
+                ) from classified
+            raise classified
+
+        if last_error is not None:
+            raise SourceryRetryExhaustedError(
+                str(last_error), attempts=attempts, context=context
+            ) from last_error
+        raise SourceryRetryExhaustedError(
+            "Reconciliation retries exhausted without a completed report",
+            attempts=attempts,
+            context=context,
+        )
+
+    async def _arun_reconciliation_workforce(
+        self: BlackGeorgeReconciliationRuntime,
+        *,
+        run_id: str,
+        document: SourceDocument,
+        extractions: list[AlignedExtraction],
+        task_instructions: str,
+    ) -> DocumentReconciliationReport:
+        from blackgeorge.collaboration import (
+            Blackboard,
+            Channel,
+            blackboard_read_tool,
+            blackboard_write_tool,
+        )
+
+        blackboard = Blackboard()
+        channel = Channel()
+        coreference_worker = self._blackgeorge.Worker(
+            name=self._COREFERENCE_WORKER_NAME,
+            instructions=(
+                "Cluster equivalent entity mentions across all chunks. "
+                "Write an object to blackboard key 'coreference_clusters' using blackboard_write. "
+                "Then return mode='coreference' with a compact summary."
+            ),
+            tools=[blackboard_write_tool(blackboard, author=self._COREFERENCE_WORKER_NAME)],
+        )
+        resolver_worker = self._blackgeorge.Worker(
+            name=self._RESOLVER_WORKER_NAME,
+            instructions=(
+                "Read blackboard key 'coreference_clusters' and produce canonical resolved entities/claims. "
+                "Return mode='resolver', keep_indices, and canonical_claims."
+            ),
+            tools=[blackboard_read_tool(blackboard)],
+        )
+        workforce = self._blackgeorge.Workforce(
+            [coreference_worker, resolver_worker],
+            mode="collaborate",
+            name=f"sourcery-reconcile:{run_id}:{document.document_id}",
+            channel=channel,
+            blackboard=blackboard,
+        )
+        job = self._blackgeorge.Job(
+            input={
+                "document_id": document.document_id,
+                "task_instructions": task_instructions,
+                "reconciliation_config": self._runtime_config.reconciliation.model_dump(
+                    mode="json"
+                ),
+                "extractions": self._serialize_extractions(extractions),
+            },
+            response_schema=ReconciliationWorkerOutput,
+        )
+        context = ErrorContext(
+            run_id=run_id,
+            model=self._runtime_config.model,
+            provider=self._provider_name(),
+        )
+        report = await self._arun_workforce_with_retries(
+            workforce=workforce,
+            job=job,
+            context=context,
+        )
+        warnings = [error for error in getattr(report, "errors", []) or []]
+        events = [event_to_record(event) for event in getattr(report, "events", []) or []]
+        resolver_data = self._resolve_worker_data(
+            data_obj=getattr(report, "data", None),
+            worker_name=self._RESOLVER_WORKER_NAME,
+        )
+        if resolver_data is None:
+            return DocumentReconciliationReport(
+                document_id=document.document_id,
+                reconciled_extractions=extractions,
+                warnings=warnings + ["Resolver worker output missing from reconciliation run"],
+                events=events,
+                raw_run_id=getattr(report, "run_id", None),
+            )
+
+        resolver_output = ReconciliationWorkerOutput.model_validate(resolver_data)
+        keep_indices = self._sanitize_indices(resolver_output.keep_indices, len(extractions))
+        if not keep_indices:
+            keep_indices = list(range(len(extractions)))
+        reconciled = [extractions[index] for index in keep_indices]
+        canonical_claims = self._canonical_claims_from_worker(
+            document_id=document.document_id,
+            extractions=extractions,
+            resolver_output=resolver_output,
+            allowed_indices=set(keep_indices),
+        )
+        return DocumentReconciliationReport(
+            document_id=document.document_id,
+            reconciled_extractions=reconciled,
+            canonical_claims=canonical_claims,
+            warnings=warnings,
+            events=events,
+            raw_run_id=getattr(report, "run_id", None),
+        )
+
     def _serialize_extractions(
         self: BlackGeorgeReconciliationRuntime,
         extractions: Sequence[AlignedExtraction],
