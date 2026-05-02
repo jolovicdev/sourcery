@@ -15,9 +15,26 @@ class ExampleValidator:
         fuzzy_threshold: float,
     ) -> list[ExampleValidationIssue]:
         issues: list[ExampleValidationIssue] = []
+        known_entities = task.entity_schema.by_name()
 
         for example_index, example in enumerate(task.examples):
             for extraction in example.extractions:
+                if extraction.entity not in known_entities:
+                    issues.append(
+                        ExampleValidationIssue(
+                            example_index=example_index,
+                            entity=extraction.entity,
+                            text=extraction.text,
+                            status="unresolved",
+                            detail=(
+                                f"Entity '{extraction.entity}' not in schema "
+                                f"(known: {sorted(known_entities)})"
+                            ),
+                        )
+                    )
+                    continue
+
+                exact = _find_exact_span(example.text, extraction.text)
                 exact = _find_exact_span(example.text, extraction.text)
                 if exact is not None:
                     continue
