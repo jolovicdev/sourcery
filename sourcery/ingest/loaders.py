@@ -14,7 +14,6 @@ from sourcery.exceptions import SourceryDependencyError, SourceryIngestionError
 
 _TEXT_FILE_SUFFIXES = {".txt", ".md", ".rst", ".csv", ".json", ".jsonl", ".yaml", ".yml"}
 _HTML_SUFFIXES = {".html", ".htm"}
-_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp"}
 
 
 class _HTMLTextExtractor(HTMLParser):
@@ -150,48 +149,6 @@ def load_url_document(
     )
 
 
-def load_ocr_image_document(
-    path: str | Path,
-    *,
-    document_id: str | None = None,
-    metadata: dict[str, Any] | None = None,
-    language: str = "eng",
-) -> SourceDocument:
-    image_path = Path(path)
-    if not image_path.exists():
-        raise SourceryIngestionError(f"Image file does not exist: {image_path}")
-
-    try:
-        image_module = importlib.import_module("PIL.Image")
-    except Exception as exc:
-        raise SourceryDependencyError(
-            "OCR image ingestion requires `Pillow` (install with `uv pip install pillow`)."
-        ) from exc
-
-    try:
-        pytesseract_module = importlib.import_module("pytesseract")
-    except Exception as exc:
-        raise SourceryDependencyError(
-            "OCR image ingestion requires `pytesseract` (install with `uv pip install pytesseract`)."
-        ) from exc
-
-    with image_module.open(image_path) as image:
-        text = pytesseract_module.image_to_string(image, lang=language)
-    stripped = text.strip()
-    if not stripped:
-        raise SourceryIngestionError("OCR ingestion produced empty text")
-    return SourceDocument(
-        document_id=document_id or image_path.stem,
-        text=stripped,
-        metadata=_normalize_metadata(
-            metadata,
-            source_type="ocr_image",
-            source=str(image_path),
-            language=language,
-        ),
-    )
-
-
 def load_source_document(
     source: SourceDocument | str | Path,
     *,
@@ -208,8 +165,6 @@ def load_source_document(
             return load_pdf_document(source_path, document_id=document_id, metadata=metadata)
         if suffix in _HTML_SUFFIXES:
             return load_html_document(source_path, document_id=document_id, metadata=metadata)
-        if suffix in _IMAGE_SUFFIXES:
-            return load_ocr_image_document(source_path, document_id=document_id, metadata=metadata)
 
         text = source_path.read_text(encoding="utf-8", errors="ignore")
         if not text.strip():

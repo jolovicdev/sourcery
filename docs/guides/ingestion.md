@@ -10,7 +10,6 @@ Implementation lives in `sourcery/ingest/loaders.py`.
 - PDF files (`.pdf`, requires `pypdf`)
 - HTML files and raw HTML
 - HTTP/HTTPS URLs
-- OCR image files: `.png`, `.jpg`, `.jpeg`, `.webp`, `.tiff`, `.bmp` (requires `Pillow` + `pytesseract`)
 
 ## Primary APIs
 
@@ -22,8 +21,6 @@ Extended APIs:
 - `load_pdf_document(path, ...)`
 - `load_html_document(source, raw_html=False, ...)`
 - `load_url_document(url, ...)`
-- `load_ocr_image_document(path, ...)`
-
 ## Examples
 
 Load one source automatically:
@@ -59,10 +56,9 @@ doc = load_html_document("<html><body><h1>Hello</h1></body></html>", raw_html=Tr
 - Missing optional dependency -> `SourceryDependencyError`
 - Empty parsed content -> `SourceryIngestionError`
 - Invalid URL passed to `load_url_document(...)` -> `SourceryIngestionError`
-- Missing PDF/HTML/image path in dedicated loaders -> `SourceryIngestionError`
+- Missing PDF/HTML path in dedicated loaders -> `SourceryIngestionError`
 
 ## Operational Notes
 
 - URL ingestion auto-detects PDF vs HTML vs plain text by content type and payload.
-- OCR requires system Tesseract to be installed in addition to Python packages.
 - `load_source_document("missing/path.txt")` does not raise by default; because the path does not exist, it is treated as inline text. Use dedicated loaders when you require strict path existence checks.

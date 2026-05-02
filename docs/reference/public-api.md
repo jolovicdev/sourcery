@@ -37,8 +37,6 @@ From `sourcery.ingest`:
 - `load_pdf_document(...)`
 - `load_html_document(...)`
 - `load_url_document(...)`
-- `load_ocr_image_document(...)`
-
 Top-level shortcut (`import sourcery`) includes only:
 
 - `load_source_document(...)`

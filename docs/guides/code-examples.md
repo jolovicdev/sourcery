@@ -177,7 +177,6 @@ print(result.metrics.documents_total)
 
 Notes:
 - PDF ingestion requires `pypdf`.
-- OCR image ingestion requires `pillow` and `pytesseract`.
 
 ## 4) Async extraction
 
