@@ -29,7 +29,7 @@ Minimal runtime:
 uv sync
 ```
 
-With ingestion adapters (PDF/OCR/URL HTML):
+With ingestion adapters (PDF/URL/HTML):
 
 ```bash
 uv sync --extra ingest
@@ -51,7 +51,7 @@ Import-level API (`sourcery/__init__.py`):
 2. `aextract(request: ExtractRequest, engine: SourceryEngine | None = None) -> ExtractResult`
 3. `extract_from_sources(sources, *, task, runtime, options=None, engine=None) -> ExtractResult`
 4. `aextract_from_sources(...) -> ExtractResult`
-5. `SourceryEngine` with `.extract(...)`, `.aextract(...)`, `.replay_run(...)`
+5. `SourceryEngine` with `.extract(...)`, `.aextract(...)`, `.extract_stream(...)`, `.replay_run(...)`
 
 ## Data Contracts You Define
 
@@ -207,12 +207,12 @@ Supported ingestion via `load_source_document(s)`:
 3. PDF files (`pypdf`)
 4. HTML files / raw HTML
 5. URLs
-6. OCR image files (`Pillow` + `pytesseract`)
+6. Image files via VLM OCR (`sourcery.ingest.load_vlm_ocr_document`)
 
 Notes:
 
 - PDF loader is text-extraction first (`pypdf`).
-- OCR is currently image-based ingestion, not multimodal LLM extraction.
+- Image ingestion uses any vision-language model through blackgeorge multimodal support.
 
 Notebook equivalent: `examples/notebooks/sourcery_pdf_workflow.ipynb`
 

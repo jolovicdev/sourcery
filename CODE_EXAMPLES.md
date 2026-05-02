@@ -177,7 +177,7 @@ print(result.metrics.documents_total)
 
 Notes:
 - PDF ingestion requires `pypdf`.
-- OCR image ingestion requires `pillow` and `pytesseract`.
+- Image ingestion uses VLM OCR via any vision model (see section 11).
 
 ## 4) Async extraction
 
@@ -449,7 +449,49 @@ except SourceryProviderError as exc:
     print("Provider/runtime error:", exc)
 ```
 
-## 10) Benchmark command
+## 10) VLM image OCR
+
+```python
+from sourcery.contracts import RuntimeConfig
+from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
+
+backend = BlackGeorgeVLMOCRBackend(
+    RuntimeConfig(model="openrouter/qwen/qwen3.6-27b", temperature=0.0),
+)
+doc = load_vlm_ocr_document("invoice.png", backend=backend)
+# doc is a SourceDocument — feed it into extract() like any other document
+```
+
+Custom backend for any VLM:
+
+```python
+from sourcery.ingest import VLMOCRBackend
+
+class MyBackend:
+    def extract_text(self, *, image_path, prompt=None):
+        return call_your_vision_model(image_path, prompt)
+
+assert isinstance(MyBackend(), VLMOCRBackend)
+doc = load_vlm_ocr_document("scan.png", backend=MyBackend())
+```
+
+## 11) Streaming extraction
+
+```python
+from sourcery.contracts import StreamExtractionAdded, StreamChunkDone, StreamPassDone
+
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(f"New: {event.extraction.entity}='{event.extraction.text}'")
+    elif isinstance(event, StreamChunkDone):
+        print(f"Chunk {event.chunk_id} done ({event.candidates_found} candidates)")
+    elif isinstance(event, StreamPassDone):
+        print(f"Pass {event.pass_id} done (+{event.additions_this_pass})")
+
+# Generator returns ExtractResult on exhaustion
+```
+
+## 12) Benchmark command
 
 ```bash
 uv run sourcery-benchmark \

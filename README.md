@@ -47,12 +47,14 @@ This means BlackGeorge is a hard runtime dependency in this project.
 ## Features
 
 - Schema-first extraction with Pydantic models.
-- Ingestion adapters: text, file, PDF, HTML, URL, OCR image.
+- Ingestion adapters: text, file, PDF, HTML, URL, VLM-based image OCR.
 - Deterministic chunking and alignment.
 - Multi-pass extraction with stop-when-no-new-results.
 - Cross-chunk refinement and document-level reconciliation.
 - Session-based refinement mode.
 - Reviewer HTML UI + export to JSONL/CSV.
+- Real async extraction (native async/await, no thread pools).
+- Streaming extraction — yields results per chunk as they land.
 - Run tracing and replay.
 
 ## Install
