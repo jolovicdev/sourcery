@@ -46,6 +46,40 @@ class BlackGeorgeFlowMixin:
             flow_report=flow_report,
         )
 
+    async def _arun_flow_batch(
+        self: BlackGeorgeFlowRuntime,
+        *,
+        run_id: str,
+        pass_id: int,
+        chunks: Sequence[TextChunk],
+        task_instructions: str,
+        refinement_contexts: dict[str, str],
+    ) -> list[ChunkExtractionReport]:
+        flow, flow_job, worker_names = self._build_flow_for_chunks(
+            run_id=run_id,
+            pass_id=pass_id,
+            chunks=chunks,
+            task_instructions=task_instructions,
+            refinement_contexts=refinement_contexts,
+        )
+        flow_report = await self._arun_flow_with_retries(
+            flow=flow,
+            flow_job=flow_job,
+            context=ErrorContext(
+                run_id=run_id,
+                pass_id=pass_id,
+                model=self._runtime_config.model,
+                provider=self._provider_name(),
+            ),
+        )
+        return self._reports_from_flow_report(
+            run_id=run_id,
+            pass_id=pass_id,
+            chunks=chunks,
+            worker_names=worker_names,
+            flow_report=flow_report,
+        )
+
     def _provider_name(self: BlackGeorgeFlowRuntime) -> str:
         model_name = str(self._runtime_config.model)
         return model_name.split("/", 1)[0]
@@ -138,6 +172,71 @@ class BlackGeorgeFlowMixin:
                 raise RuntimeIntegrationError(str(exc), context=context) from exc
 
             flow_report = self._resume_if_paused(flow=flow, report=flow_report, context=context)
+            if flow_report.status == "completed":
+                return flow_report
+
+            errors = [error for error in getattr(flow_report, "errors", []) or []]
+            if not errors:
+                errors = [
+                    f"Flow returned status '{flow_report.status}' without explicit error details"
+                ]
+
+            classified = classify_provider_errors(errors, context=context)
+            if self._should_retry_errors(errors):
+                if attempts < self._retry.max_attempts:
+                    self._sleep_before_retry(attempts)
+                    continue
+                raise SourceryRetryExhaustedError(
+                    "; ".join(errors),
+                    attempts=attempts,
+                    context=context,
+                ) from classified
+
+            raise classified
+
+        if last_error is not None:
+            raise SourceryRetryExhaustedError(
+                str(last_error),
+                attempts=attempts,
+                context=context,
+            ) from last_error
+
+        raise SourceryRetryExhaustedError(
+            "Runtime retries exhausted without a completed report",
+            attempts=attempts,
+            context=context,
+        )
+
+    async def _arun_flow_with_retries(
+        self: BlackGeorgeFlowRuntime,
+        *,
+        flow: Any,
+        flow_job: Any,
+        context: ErrorContext,
+    ) -> Any:
+        attempts = 0
+        last_error: Exception | None = None
+
+        while attempts < self._retry.max_attempts:
+            attempts += 1
+            try:
+                flow_report = await flow.arun(flow_job)
+            except Exception as exc:
+                last_error = exc
+                if self._should_retry_exception(exc):
+                    if attempts < self._retry.max_attempts:
+                        self._sleep_before_retry(attempts)
+                        continue
+                    raise SourceryRetryExhaustedError(
+                        str(exc),
+                        attempts=attempts,
+                        context=context,
+                    ) from exc
+                raise RuntimeIntegrationError(str(exc), context=context) from exc
+
+            flow_report = await self._aresume_if_paused(
+                flow=flow, report=flow_report, context=context
+            )
             if flow_report.status == "completed":
                 return flow_report
 

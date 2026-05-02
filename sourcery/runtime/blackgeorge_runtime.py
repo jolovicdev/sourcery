@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Sequence
 from typing import Any
 
@@ -161,17 +160,29 @@ class BlackGeorgeRuntime(
         task_instructions: str,
         batch_concurrency: int,
     ) -> list[ChunkExtractionReport]:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
-            lambda: self.run_pass(
-                run_id=run_id,
-                pass_id=pass_id,
-                chunks=chunks,
-                task_instructions=task_instructions,
-                batch_concurrency=batch_concurrency,
-            ),
+        if not chunks:
+            return []
+
+        refinement_contexts = self._build_refinement_contexts(
+            run_id=run_id,
+            pass_id=pass_id,
+            chunks=chunks,
+            task_instructions=task_instructions,
         )
+        reports: list[ChunkExtractionReport] = []
+        for batch in self._chunk_batches(chunks, max(batch_concurrency, 1)):
+            reports.extend(
+                await self._arun_flow_batch(
+                    run_id=run_id,
+                    pass_id=pass_id,
+                    chunks=batch,
+                    task_instructions=task_instructions,
+                    refinement_contexts=refinement_contexts,
+                )
+            )
+        input_order = {chunk.chunk_id: index for index, chunk in enumerate(chunks)}
+        reports.sort(key=lambda report: input_order.get(report.chunk.chunk_id, len(input_order)))
+        return reports
 
     def replay_run(self, raw_run_id: str) -> tuple[dict[str, Any] | None, list[EventRecord]]:
         record = self._desk.run_store.get_run(raw_run_id)
