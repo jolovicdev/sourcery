@@ -22,7 +22,7 @@ Core runtime model:
 - `sourcery/contracts/` data contracts and public typed models
 - `sourcery/pipeline/` chunking, prompt compilation, alignment, merge, validation
 - `sourcery/runtime/` engine and BlackGeorge integration
-- `sourcery/ingest/` source loaders (text/file/pdf/html/url/ocr)
+- `sourcery/ingest/` source loaders (text/file/pdf/html/url) and VLM OCR interface
 - `sourcery/io/` JSONL, visualization, reviewer UI
 - `sourcery/observability/` trace/event collection
 - `sourcery/benchmarks/` Sourcery vs LangExtract benchmark runner

@@ -35,3 +35,18 @@ def test_example_validator_warn_mode(task: ExtractionTask) -> None:
     warnings = validator.enforce_or_warn(task=task, issues=issues)
 
     assert warnings
+
+
+def test_example_validator_flags_unknown_entity(task: ExtractionTask) -> None:
+    validator = ExampleValidator()
+    task.examples[0].extractions[0].entity = "company"
+
+    issues = validator.validate(task=task, fuzzy_threshold=0.82)
+    assert any("company" in issue.entity for issue in issues)
+    assert any("not in schema" in issue.detail.lower() for issue in issues)
+
+
+def test_example_validator_allows_known_entities(task: ExtractionTask) -> None:
+    validator = ExampleValidator()
+    issues = validator.validate(task=task, fuzzy_threshold=0.82)
+    assert not issues

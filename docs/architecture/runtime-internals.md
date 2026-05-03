@@ -1,4 +1,4 @@
-# Runtime Internals
+# Sourcery Runtime Internals: Async, Streaming, and Replay
 
 ## Engine
 
@@ -15,7 +15,10 @@ Public entry points:
 
 - `SourceryEngine.extract(request)`
 - `SourceryEngine.aextract(request)`
+- `SourceryEngine.extract_stream(request)`
 - `SourceryEngine.replay_run(request, raw_run_id)`
+
+`extract_stream(...)` is Sourcery-level result streaming: chunks still run through the normal runtime path, but the engine emits `StreamExtractionAdded`, `StreamChunkDone`, and `StreamPassDone` events as merged results become available.
 
 ## Runtime Boundary
 
@@ -23,8 +26,11 @@ Protocols in `sourcery/runtime/base.py` define black-box contracts:
 
 - `ChunkRuntime`
 - `DocumentReconciliationRuntime`
+- `AsyncDocumentReconciliationRuntime`
 
 Any runtime implementation that satisfies these interfaces can be swapped in.
+
+`EngineDependencies` wires the runtime factory, prompt compiler, example validator, chunk planner, aligner, merger, and trace collector. This keeps the engine testable without making those dependency hooks decorative.
 
 ## BlackGeorge Runtime Composition
 

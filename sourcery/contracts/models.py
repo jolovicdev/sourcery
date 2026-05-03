@@ -471,3 +471,27 @@ class ExampleValidationIssue(BaseModel):
     text: str
     status: AlignmentStatus
     detail: str
+
+
+class StreamExtractionAdded(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    document_id: str
+    extraction: AlignedExtraction
+
+
+class StreamChunkDone(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    chunk_id: str
+    document_id: str
+    pass_id: int
+    candidates_found: int
+
+
+class StreamPassDone(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pass_id: int
+    additions_this_pass: int
+    extractions_so_far: int

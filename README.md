@@ -1,8 +1,8 @@
-# Sourcery: Schema-First Document Extraction (LangExtract Alternative on BlackGeorge)
+# Sourcery: Schema-First LLM Document Extraction for Python
 
-Sourcery is a **schema-first LLM extraction framework** for turning unstructured documents into typed, grounded entities and claims.
+Sourcery is a **Python LLM extraction framework** for turning unstructured text, PDFs, HTML, URLs, and VLM OCR image sources into typed, source-grounded Pydantic data.
 
-It is built on [**BlackGeorge**](https://github.com/jolovicdev/blackgeorge) runtime primitives (`Desk`, `Flow`, `Worker`, `Workforce`, `RunStore`, `EventBus`) and is designed as a clean-break alternative to LangExtract.
+Define your extraction schema with Pydantic, run chunked model extraction, align every result back to source spans, optionally reconcile mentions into canonical claims, and export JSONL or HTML review workflows.
 
 ## What Is Sourcery
 
@@ -22,7 +22,7 @@ Core idea:
 4. Reconcile at document-level into canonical claims.
 5. Review/export via JSONL + HTML reviewer.
 
-## Why Sourcery vs LangExtract
+## Why Sourcery
 
 Sourcery is optimized for **type safety + runtime reliability + deterministic post-processing**.
 
@@ -31,13 +31,13 @@ Sourcery is optimized for **type safety + runtime reliability + deterministic po
 - Deterministic alignment statuses (`exact`, `fuzzy`, `partial`, `unresolved`).
 - Deterministic merge behavior across passes.
 - Typed error taxonomy for provider/runtime/pipeline/ingestion failures.
-- Run replay seam via BlackGeorge run store.
+- Run replay via BlackGeorge run store.
 - Built-in reviewer UI (search/filter/approve/export).
-- Document-level reconciliation support (Workforce + Blackboard + resolver worker).
+- Document-level reconciliation support with BlackGeorge Workforce + Blackboard + resolver worker.
 
 ## BlackGeorge Relationship
 
-Sourcery is an application layer **on top of** [**BlackGeorge**](https://github.com/jolovicdev/blackgeorge).
+Sourcery is an application layer **on top of** [**BlackGeorge**](https://github.com/jolovicdev/blackgeorge) runtime primitives (`Desk`, `Flow`, `Worker`, `Workforce`, `RunStore`, `EventBus`).
 
 - Sourcery handles extraction domain logic.
 - BlackGeorge handles model execution, workflow orchestration, events, pause/resume, and run storage.
@@ -47,12 +47,14 @@ This means BlackGeorge is a hard runtime dependency in this project.
 ## Features
 
 - Schema-first extraction with Pydantic models.
-- Ingestion adapters: text, file, PDF, HTML, URL, OCR image.
+- Ingestion adapters: text, file, PDF, HTML, URL, VLM-based image OCR.
 - Deterministic chunking and alignment.
 - Multi-pass extraction with stop-when-no-new-results.
 - Cross-chunk refinement and document-level reconciliation.
 - Session-based refinement mode.
 - Reviewer HTML UI + export to JSONL/CSV.
+- Real async extraction (native async/await, no thread pools).
+- Streaming extraction — yields results per chunk as they land.
 - Run tracing and replay.
 
 ## Install
@@ -64,11 +66,19 @@ uv sync --extra dev --extra ingest
 PyPI distribution name: `sourceryforge`  
 Python import path: `sourcery`
 
+Install from PyPI:
+
 ```bash
-pip install sourceryforge (uv add sourceryforge)
+pip install sourceryforge
 ```
 
-If you want Sourcery vs LangExtract benchmark tooling:
+Or with uv:
+
+```bash
+uv add sourceryforge
+```
+
+If you want benchmark tooling:
 
 ```bash
 uv sync --extra benchmark
@@ -105,12 +115,12 @@ Output JSON is written to `benchmark_results/` and includes:
 
 - run settings,
 - tokenization throughput table,
-- per-language Sourcery and LangExtract extraction metrics,
-- aggregate summary for both frameworks.
+- per-language extraction metrics,
+- aggregate framework summaries.
 
 ### Benchmark Port Scope
 
-This is based on LangExtract `benchmarks/benchmark.py` behavior, but it is not a byte-for-byte clone.
+The benchmark runner compares Sourcery with LangExtract using a similar Gutenberg sampling flow. It is not a byte-for-byte clone of LangExtract's benchmark script.
 
 - Ported: Gutenberg text sampling flow, per-language extraction runs, retry behavior, timing, grounded/unresolved metrics, JSON output artifacts.
 

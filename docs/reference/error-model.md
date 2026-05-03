@@ -1,4 +1,4 @@
-# Error Model
+# Sourcery Error Model
 
 Exceptions are defined in `sourcery/exceptions.py`.
 
@@ -33,7 +33,7 @@ Use these to distinguish deterministic task/schema/pipeline problems from runtim
 - `SourceryIngestionError`
 - `SourceryDependencyError`
 
-Dependency errors indicate missing optional packages (`pypdf`, `Pillow`, `pytesseract`).
+Dependency errors indicate missing optional packages (`pypdf`).
 
 ## Runtime Classification Behavior
 
