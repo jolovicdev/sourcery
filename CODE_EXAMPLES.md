@@ -1,4 +1,4 @@
-# CODE_EXAMPLES.md
+# Sourcery Code Examples for Python LLM Extraction
 
 Practical examples for the current Sourcery API.
 
@@ -177,7 +177,7 @@ print(result.metrics.documents_total)
 
 Notes:
 - PDF ingestion requires `pypdf`.
-- Image ingestion uses VLM OCR via any vision model (see section 11).
+- Image ingestion uses VLM OCR via any vision model (see section 10).
 
 ## 4) Async extraction
 
@@ -456,7 +456,7 @@ from sourcery.contracts import RuntimeConfig
 from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
 
 backend = BlackGeorgeVLMOCRBackend(
-    RuntimeConfig(model="openrouter/qwen/qwen3.6-27b", temperature=0.0),
+    RuntimeConfig(model="provider/vision-model", temperature=0.0),
 )
 doc = load_vlm_ocr_document("invoice.png", backend=backend)
 # doc is a SourceDocument — feed it into extract() like any other document
@@ -479,7 +479,9 @@ doc = load_vlm_ocr_document("scan.png", backend=MyBackend())
 
 ```python
 from sourcery.contracts import StreamExtractionAdded, StreamChunkDone, StreamPassDone
+from sourcery.runtime import SourceryEngine
 
+engine = SourceryEngine()
 for event in engine.extract_stream(request):
     if isinstance(event, StreamExtractionAdded):
         print(f"New: {event.extraction.entity}='{event.extraction.text}'")
@@ -488,7 +490,7 @@ for event in engine.extract_stream(request):
     elif isinstance(event, StreamPassDone):
         print(f"Pass {event.pass_id} done (+{event.additions_this_pass})")
 
-# Generator returns ExtractResult on exhaustion
+# The generator returns ExtractResult through StopIteration.value if manually consumed.
 ```
 
 ## 12) Benchmark command

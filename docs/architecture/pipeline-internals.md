@@ -1,4 +1,4 @@
-# Pipeline Internals
+# Sourcery Pipeline Internals: Chunking, Alignment, and Merge
 
 Pipeline modules are deterministic and side-effect free.
 

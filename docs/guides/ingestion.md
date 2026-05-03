@@ -1,4 +1,4 @@
-# Ingestion
+# Load Text, PDFs, URLs, HTML, and Images into Sourcery
 
 Ingestion normalizes heterogeneous inputs into `SourceDocument`.
 Implementation lives in `sourcery/ingest/loaders.py`.

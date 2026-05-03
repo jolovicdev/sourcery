@@ -1,4 +1,4 @@
-# File-by-File Map
+# Sourcery File-by-File Map
 
 This map links each tracked module to its responsibility.
 

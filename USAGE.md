@@ -1,13 +1,13 @@
-# Sourcery Usage Guide
+# Sourcery Usage Guide for Python LLM Extraction
 
 ## What Sourcery Is
 
 Sourcery is both:
 
-1. A **Python library** you import (`import sourcery`) to run schema-first extraction.
+1. A **Python library** you import (`import sourcery`) to run schema-first LLM extraction.
 2. A **reference project** with ingestion adapters, HTML reviewer UI, and runnable integration scripts.
 
-Use it as a library inside your app, and use this repository as a production template.
+Use it as a library inside your app, and use this repository as a production template for typed, source-grounded document extraction.
 
 ## When To Use Sourcery
 
@@ -52,6 +52,12 @@ Import-level API (`sourcery/__init__.py`):
 3. `extract_from_sources(sources, *, task, runtime, options=None, engine=None) -> ExtractResult`
 4. `aextract_from_sources(...) -> ExtractResult`
 5. `SourceryEngine` with `.extract(...)`, `.aextract(...)`, `.extract_stream(...)`, `.replay_run(...)`
+
+Streaming event contracts live in `sourcery.contracts`:
+
+- `StreamExtractionAdded`
+- `StreamChunkDone`
+- `StreamPassDone`
 
 ## Data Contracts You Define
 
@@ -130,6 +136,8 @@ Document-level reconciliation (optional):
   - `use_workforce=True`
   - `min_mentions_for_claim=1`
   - `max_claims=200`
+
+`RuntimeConfig.stream` is passed to the underlying BlackGeorge runtime/provider. For Sourcery-level chunk progress, use `SourceryEngine.extract_stream(...)`.
 
 ## Extraction Options (`ExtractOptions`)
 
@@ -220,6 +228,25 @@ Notebook equivalent: `examples/notebooks/sourcery_pdf_workflow.ipynb`
 
 ```python
 result = await sourcery.aextract(request)
+```
+
+## Streaming Extraction
+
+`extract_stream(...)` yields chunk-level Sourcery events as extraction work completes. It is result/progress streaming, not token streaming.
+
+```python
+from sourcery.contracts import StreamChunkDone, StreamExtractionAdded, StreamPassDone
+from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(event.document_id, event.extraction.entity, event.extraction.text)
+    elif isinstance(event, StreamChunkDone):
+        print("chunk done:", event.chunk_id, event.candidates_found)
+    elif isinstance(event, StreamPassDone):
+        print("pass done:", event.pass_id, event.additions_this_pass)
 ```
 
 ## Advanced Engine Usage

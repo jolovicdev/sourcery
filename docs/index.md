@@ -1,14 +1,16 @@
-# Sourcery
+# Sourcery: Schema-First LLM Document Extraction for Python
 
-Sourcery is a schema-first extraction framework for turning unstructured text, files, URLs, and documents into typed, grounded entities.
+Sourcery converts unstructured text, PDFs, HTML, URLs, and image OCR output into typed, source-grounded Pydantic data.
 
-If you can define your target entities as Pydantic models, you can run reproducible extraction pipelines with traceability, retry policy, and reviewable outputs.
+If you can define your target entities as Pydantic models, you can run reproducible LLM extraction pipelines with deterministic chunking, source-span alignment, retry policy, async execution, streaming chunk events, and reviewable outputs.
 
 ## What You Build With It
 
 - Typed entity extraction with strict schema validation.
 - Character-grounded spans (`char_start`, `char_end`) for each extraction.
 - Deterministic chunking, alignment, and merge behavior.
+- Optional document-level reconciliation into canonical claims.
+- Native async extraction and chunk-level streaming events.
 - JSONL + HTML outputs for downstream systems and human review.
 
 ## Core Boundaries

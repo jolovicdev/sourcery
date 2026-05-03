@@ -1,4 +1,4 @@
-# Error Model
+# Sourcery Error Model
 
 Exceptions are defined in `sourcery/exceptions.py`.
 

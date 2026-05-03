@@ -1,4 +1,4 @@
-# Public API
+# Sourcery Public API Reference
 
 Top-level exports are defined in `sourcery/__init__.py`.
 
@@ -16,6 +16,7 @@ aextract_from_sources(sources, *, task, runtime, options=None, engine=None) -> E
 ```python
 SourceryEngine.extract(request) -> ExtractResult
 SourceryEngine.aextract(request) -> ExtractResult
+SourceryEngine.extract_stream(request) -> Generator[StreamEvent, None, ExtractResult]
 SourceryEngine.replay_run(request, raw_run_id) -> tuple[dict[str, object] | None, list[EventRecord]]
 ```
 
@@ -27,6 +28,11 @@ SourceryEngine.replay_run(request, raw_run_id) -> tuple[dict[str, object] | None
 - `RuntimeConfig`, `RetryPolicy`, `SessionRefinementConfig`, `ReconciliationConfig`
 - `AlignedExtraction`, `CanonicalClaim`, `DocumentResult`, `DocumentReconciliationReport`
 - `ExtractionRunTrace`, `RunMetrics`, `SourceDocument`
+
+Additional contracts from `sourcery.contracts`:
+
+- `StreamExtractionAdded`, `StreamChunkDone`, `StreamPassDone`
+- `EngineDependencies`
 
 ## Ingestion Exports
 
@@ -41,6 +47,7 @@ From `sourcery.ingest`:
 - `load_vlm_ocr_documents(...)`
 - `VLMOCRBackend` — protocol for custom VLM OCR backends
 - `BlackGeorgeVLMOCRBackend(...)` — blackgeorge multimodal implementation
+
 Top-level shortcut (`import sourcery`) includes only:
 
 - `load_source_document(...)`

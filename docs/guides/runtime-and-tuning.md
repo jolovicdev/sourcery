@@ -1,4 +1,4 @@
-# Runtime And Tuning
+# Tune Sourcery Runtime: Async, Streaming, Retries, and Reconciliation
 
 Use `RuntimeConfig` for provider/runtime behavior and `ExtractOptions` for deterministic pipeline controls.
 
@@ -15,6 +15,8 @@ Common:
 - `stream`
 - `storage_dir`
 - `respect_context_window`
+
+`RuntimeConfig.stream` is passed through to the BlackGeorge runtime/provider. For application-level progress events, use `SourceryEngine.extract_stream(...)`.
 
 Retry policy (`retry`):
 
@@ -48,6 +50,8 @@ Optional workflows:
 
 - If `allow_unresolved=False` (default), unresolved candidates are counted in metrics but not returned in `documents[*].extractions`.
 - If `strict_example_alignment=True` (default in `ExtractionTask`) and examples are unresolved, extraction raises `ExampleValidationError` before runtime execution.
+- `SourceryEngine.aextract(...)` uses native async runtime calls.
+- `SourceryEngine.extract_stream(...)` emits chunk/pass result events and still returns the same final `ExtractResult` when exhausted.
 - If reconciliation workforce fails at runtime, the engine falls back to deterministic canonical-claim construction and records warnings.
 
 ## Practical Baseline

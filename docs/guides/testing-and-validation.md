@@ -1,4 +1,4 @@
-# Testing And Validation
+# Test and Validate Sourcery
 
 Run the full validation suite before merging changes.
 

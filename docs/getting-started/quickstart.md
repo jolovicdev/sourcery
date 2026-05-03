@@ -1,6 +1,6 @@
-# Quickstart
+# Sourcery Quickstart: Extract Typed Data from Text with an LLM
 
-This quickstart creates a typed extraction task, runs extraction, and writes reviewable outputs.
+This quickstart creates a Pydantic-backed extraction task, runs LLM extraction, and writes source-grounded JSONL plus HTML review outputs.
 
 ## 1. Create `quickstart.py`
 
@@ -93,5 +93,5 @@ result = await sourcery.aextract(request)
 
 ## What To Do Next
 
-- Move to [Build A Pipeline](../guides/build-a-pipeline.md) for mixed-source ingestion.
-- Move to [Runtime And Tuning](../guides/runtime-and-tuning.md) for reliability/throughput tuning.
+- Move to [Build a Pipeline](../guides/build-a-pipeline.md) for mixed-source ingestion.
+- Move to [Runtime and Tuning](../guides/runtime-and-tuning.md) for reliability/throughput tuning.
