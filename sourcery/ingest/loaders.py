@@ -241,8 +241,11 @@ def load_vlm_ocr_documents(
     for index, path in enumerate(paths):
         loaded.append(
             load_vlm_ocr_document(
-                path, backend=backend, document_id=f"ocr_doc_{index}",
-                metadata=metadata, prompt=prompt,
+                path,
+                backend=backend,
+                document_id=f"ocr_doc_{index}",
+                metadata=metadata,
+                prompt=prompt,
             )
         )
     return loaded

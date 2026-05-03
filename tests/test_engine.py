@@ -119,6 +119,7 @@ def test_streaming_yields_extraction_chunk_and_pass_events(extract_request: Extr
     assert any(isinstance(e, StreamPassDone) for e in events)
     assert final is not None
     from sourcery.contracts import ExtractResult
+
     assert isinstance(final, ExtractResult)
     assert final.metrics.extracted_total > 0
 
@@ -175,7 +176,13 @@ def test_custom_dependencies_are_invoked(extract_request: ExtractRequest) -> Non
     from tests.conftest import FakeRuntime
     from sourcery.contracts import EngineDependencies
     from sourcery.observability.trace import RunTraceCollector
-    from sourcery.pipeline import PromptCompiler, ExampleValidator, align_candidates, merge_non_overlapping, plan_chunks
+    from sourcery.pipeline import (
+        PromptCompiler,
+        ExampleValidator,
+        align_candidates,
+        merge_non_overlapping,
+        plan_chunks,
+    )
 
     planner_called: list[bool] = []
     aligner_called: list[bool] = []

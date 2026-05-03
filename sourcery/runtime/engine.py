@@ -135,9 +135,7 @@ class SourceryEngine:
             fuzzy_threshold=request.options.fuzzy_alignment_threshold,
         )
         warnings: list[str] = []
-        warnings.extend(
-            self._example_validator.enforce_or_warn(task=request.task, issues=issues)
-        )
+        warnings.extend(self._example_validator.enforce_or_warn(task=request.task, issues=issues))
 
         runtime = self._make_runtime(request)
         reconciliation_runtime: DocumentReconciliationRuntime | None = None
@@ -148,9 +146,7 @@ class SourceryEngine:
             documents_total=len(documents),
             started_at=utc_now(),
         )
-        trace_collector = self._trace_collector_factory(
-            run_id=run_id, model=request.runtime.model
-        )
+        trace_collector = self._trace_collector_factory(run_id=run_id, model=request.runtime.model)
 
         return EngineRunState(
             run_id=run_id,
@@ -227,10 +223,7 @@ class SourceryEngine:
         for document in state.documents:
             extractions = state.document_extractions.get(document.document_id, [])
             canonical_claims = []
-            if (
-                state.reconciliation_runtime is not None
-                and request.runtime.reconciliation.enabled
-            ):
+            if state.reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
                 reconciliation = state.reconciliation_runtime.reconcile_document(
                     run_id=state.run_id,
                     document=document,
@@ -280,20 +273,13 @@ class SourceryEngine:
         for document in state.documents:
             extractions = state.document_extractions.get(document.document_id, [])
             canonical_claims = []
-            if (
-                state.reconciliation_runtime is not None
-                and request.runtime.reconciliation.enabled
-            ):
-                if isinstance(
-                    state.reconciliation_runtime, AsyncDocumentReconciliationRuntime
-                ):
-                    reconciliation = (
-                        await state.reconciliation_runtime.areconcile_document(
-                            run_id=state.run_id,
-                            document=document,
-                            extractions=extractions,
-                            task_instructions=request.task.instructions,
-                        )
+            if state.reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
+                if isinstance(state.reconciliation_runtime, AsyncDocumentReconciliationRuntime):
+                    reconciliation = await state.reconciliation_runtime.areconcile_document(
+                        run_id=state.run_id,
+                        document=document,
+                        extractions=extractions,
+                        task_instructions=request.task.instructions,
                     )
                 else:
                     reconciliation = state.reconciliation_runtime.reconcile_document(
@@ -387,9 +373,7 @@ class SourceryEngine:
             )
             additions_this_pass = 0
             for report in reports:
-                additions_this_pass += self._process_report(
-                    state, report, request, pass_id
-                )
+                additions_this_pass += self._process_report(state, report, request, pass_id)
             if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
                 break
 
@@ -411,9 +395,7 @@ class SourceryEngine:
             )
             additions_this_pass = 0
             for report in reports:
-                additions_this_pass += self._process_report(
-                    state, report, request, pass_id
-                )
+                additions_this_pass += self._process_report(state, report, request, pass_id)
             if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
                 break
 
@@ -440,18 +422,13 @@ class SourceryEngine:
                 for report in reports:
                     doc_id = report.chunk.document_id
                     pre_merge_keys = {
-                        _extraction_key(ext)
-                        for ext in state.document_extractions[doc_id]
+                        _extraction_key(ext) for ext in state.document_extractions[doc_id]
                     }
-                    additions = self._process_report(
-                        state, report, request, pass_id
-                    )
+                    additions = self._process_report(state, report, request, pass_id)
                     additions_this_pass += additions
                     for extraction in state.document_extractions[doc_id]:
                         if _extraction_key(extraction) not in pre_merge_keys:
-                            yield StreamExtractionAdded(
-                                document_id=doc_id, extraction=extraction
-                            )
+                            yield StreamExtractionAdded(document_id=doc_id, extraction=extraction)
                     yield StreamChunkDone(
                         chunk_id=report.chunk.chunk_id,
                         document_id=doc_id,
@@ -463,8 +440,7 @@ class SourceryEngine:
                 pass_id=pass_id,
                 additions_this_pass=additions_this_pass,
                 extractions_so_far=sum(
-                    len(extractions)
-                    for extractions in state.document_extractions.values()
+                    len(extractions) for extractions in state.document_extractions.values()
                 ),
             )
 

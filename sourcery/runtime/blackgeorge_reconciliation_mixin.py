@@ -183,9 +183,7 @@ class BlackGeorgeReconciliationMixin:
         while attempts < self._retry.max_attempts:
             attempts += 1
             try:
-                report = await self._desk.arun(
-                    workforce, job, stream=self._runtime_config.stream
-                )
+                report = await self._desk.arun(workforce, job, stream=self._runtime_config.stream)
             except Exception as exc:
                 last_error = exc
                 if self._should_retry_exception(exc):

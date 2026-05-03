@@ -132,9 +132,7 @@ def test_blackgeorge_backend_uses_custom_prompt(tmp_path: Path) -> None:
 
             with mock.patch("blackgeorge.Worker") as mock_worker_class:
                 with mock.patch("blackgeorge.Job") as mock_job_class:
-                    backend = BlackGeorgeVLMOCRBackend(
-                        config, default_prompt="Default prompt"
-                    )
+                    backend = BlackGeorgeVLMOCRBackend(config, default_prompt="Default prompt")
                     backend.extract_text(image_path=image, prompt="Custom request")
 
     job_input = mock_job_class.call_args[1]["input"]
