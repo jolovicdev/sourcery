@@ -52,21 +52,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -126,7 +126,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="runtime-internals">Runtime Internals<a class="headerlink" href="#runtime-internals" title="Permanent link">#</a></h1>
+                <h1 id="sourcery-runtime-internals-async-streaming-and-replay">Sourcery Runtime Internals: Async, Streaming, and Replay<a class="headerlink" href="#sourcery-runtime-internals-async-streaming-and-replay" title="Permanent link">#</a></h1>
 <h2 id="engine">Engine<a class="headerlink" href="#engine" title="Permanent link">#</a></h2>
 <p><code>SourceryEngine</code> (<code>sourcery/runtime/engine.py</code>) orchestrates the extraction lifecycle:</p>
 <ul>
@@ -141,15 +141,19 @@
 <ul>
 <li><code>SourceryEngine.extract(request)</code></li>
 <li><code>SourceryEngine.aextract(request)</code></li>
+<li><code>SourceryEngine.extract_stream(request)</code></li>
 <li><code>SourceryEngine.replay_run(request, raw_run_id)</code></li>
 </ul>
+<p><code>extract_stream(...)</code> is Sourcery-level result streaming: chunks still run through the normal runtime path, but the engine emits <code>StreamExtractionAdded</code>, <code>StreamChunkDone</code>, and <code>StreamPassDone</code> events as merged results become available.</p>
 <h2 id="runtime-boundary">Runtime Boundary<a class="headerlink" href="#runtime-boundary" title="Permanent link">#</a></h2>
 <p>Protocols in <code>sourcery/runtime/base.py</code> define black-box contracts:</p>
 <ul>
 <li><code>ChunkRuntime</code></li>
 <li><code>DocumentReconciliationRuntime</code></li>
+<li><code>AsyncDocumentReconciliationRuntime</code></li>
 </ul>
 <p>Any runtime implementation that satisfies these interfaces can be swapped in.</p>
+<p><code>EngineDependencies</code> wires the runtime factory, prompt compiler, example validator, chunk planner, aligner, merger, and trace collector. This keeps the engine testable without making those dependency hooks decorative.</p>
 <h2 id="blackgeorge-runtime-composition">BlackGeorge Runtime Composition<a class="headerlink" href="#blackgeorge-runtime-composition" title="Permanent link">#</a></h2>
 <p><code>BlackGeorgeRuntime</code> combines focused mixins:</p>
 <ul>

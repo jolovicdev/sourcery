@@ -1,6 +1,6 @@
-# System Overview
+# Sourcery System Overview
 
-Sourcery is structured as replaceable black boxes around typed contracts.
+Sourcery is structured as replaceable runtime and pipeline components around stable typed contracts.
 
 ## Primary Primitives
 
@@ -37,6 +37,8 @@ These primitives are the stable interface. Internal implementation can change wi
 1. Merge non-overlapping resolved extractions.
 1. Optionally reconcile canonical claims.
 1. Emit `ExtractResult` with metrics, warnings, and run trace.
+
+Sync, async, and streaming entry points share this lifecycle. Streaming emits chunk/pass progress events while preserving the same final result shape.
 
 ## Determinism Notes
 

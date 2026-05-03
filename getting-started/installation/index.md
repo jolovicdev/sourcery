@@ -1,4 +1,4 @@
-# Installation
+# Install Sourcery for Python LLM Extraction
 
 ## Requirements
 
@@ -24,7 +24,7 @@ Install from PyPI:
 pip install sourceryforge
 ```
 
-With ingestion adapters (PDF/OCR/URL workflows):
+With ingestion adapters (PDF/URL workflows):
 
 ```
 uv sync --extra ingest

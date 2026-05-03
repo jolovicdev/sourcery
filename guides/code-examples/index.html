@@ -52,7 +52,7 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Code Examples</a>
     <ul class="current">
@@ -74,21 +74,25 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#9-error-handling-with-typed-exceptions">9) Error handling with typed exceptions</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#10-benchmark-command">10) Benchmark command</a>
+    <li class="toctree-l2"><a class="reference internal" href="#10-vlm-image-ocr">10) VLM image OCR</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#11-streaming-extraction">11) Streaming extraction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#12-benchmark-command">12) Benchmark command</a>
     </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -136,7 +140,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="code_examplesmd">CODE_EXAMPLES.md<a class="headerlink" href="#code_examplesmd" title="Permanent link">#</a></h1>
+                <h1 id="sourcery-code-examples-for-python-llm-extraction">Sourcery Code Examples for Python LLM Extraction<a class="headerlink" href="#sourcery-code-examples-for-python-llm-extraction" title="Permanent link">#</a></h1>
 <p>Practical examples for the current Sourcery API.</p>
 <h2 id="1-minimal-typed-extraction">1) Minimal typed extraction<a class="headerlink" href="#1-minimal-typed-extraction" title="Permanent link">#</a></h2>
 <pre><code class="language-python">from pydantic import BaseModel
@@ -304,7 +308,7 @@ print(result.metrics.documents_total)
 </code></pre>
 <p>Notes:
 - PDF ingestion requires <code>pypdf</code>.
-- OCR image ingestion requires <code>pillow</code> and <code>pytesseract</code>.</p>
+- Image ingestion uses VLM OCR via any vision model (see section 10).</p>
 <h2 id="4-async-extraction">4) Async extraction<a class="headerlink" href="#4-async-extraction" title="Permanent link">#</a></h2>
 <pre><code class="language-python">import asyncio
 from pydantic import BaseModel
@@ -557,7 +561,42 @@ except SourceryRetryExhaustedError as exc:
 except SourceryProviderError as exc:
     print(&quot;Provider/runtime error:&quot;, exc)
 </code></pre>
-<h2 id="10-benchmark-command">10) Benchmark command<a class="headerlink" href="#10-benchmark-command" title="Permanent link">#</a></h2>
+<h2 id="10-vlm-image-ocr">10) VLM image OCR<a class="headerlink" href="#10-vlm-image-ocr" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from sourcery.contracts import RuntimeConfig
+from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
+
+backend = BlackGeorgeVLMOCRBackend(
+    RuntimeConfig(model=&quot;provider/vision-model&quot;, temperature=0.0),
+)
+doc = load_vlm_ocr_document(&quot;invoice.png&quot;, backend=backend)
+# doc is a SourceDocument — feed it into extract() like any other document
+</code></pre>
+<p>Custom backend for any VLM:</p>
+<pre><code class="language-python">from sourcery.ingest import VLMOCRBackend
+
+class MyBackend:
+    def extract_text(self, *, image_path, prompt=None):
+        return call_your_vision_model(image_path, prompt)
+
+assert isinstance(MyBackend(), VLMOCRBackend)
+doc = load_vlm_ocr_document(&quot;scan.png&quot;, backend=MyBackend())
+</code></pre>
+<h2 id="11-streaming-extraction">11) Streaming extraction<a class="headerlink" href="#11-streaming-extraction" title="Permanent link">#</a></h2>
+<pre><code class="language-python">from sourcery.contracts import StreamExtractionAdded, StreamChunkDone, StreamPassDone
+from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(f&quot;New: {event.extraction.entity}='{event.extraction.text}'&quot;)
+    elif isinstance(event, StreamChunkDone):
+        print(f&quot;Chunk {event.chunk_id} done ({event.candidates_found} candidates)&quot;)
+    elif isinstance(event, StreamPassDone):
+        print(f&quot;Pass {event.pass_id} done (+{event.additions_this_pass})&quot;)
+
+# The generator returns ExtractResult through StopIteration.value if manually consumed.
+</code></pre>
+<h2 id="12-benchmark-command">12) Benchmark command<a class="headerlink" href="#12-benchmark-command" title="Permanent link">#</a></h2>
 <pre><code class="language-bash">uv run sourcery-benchmark \
   --text-types english,japanese,french,spanish \
   --max-chars 4500 \
@@ -572,7 +611,7 @@ except SourceryProviderError as exc:
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../build-a-pipeline/" class="btn btn-neutral float-left" title="Build A Pipeline"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../build-a-pipeline/" class="btn btn-neutral float-left" title="Build a Pipeline"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../usage/" class="btn btn-neutral float-right" title="Usage">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 

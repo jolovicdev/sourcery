@@ -52,13 +52,13 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Ingestion</a>
     <ul class="current">
@@ -70,15 +70,23 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#failure-modes">Failure Modes</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#vlm-ocr">VLM OCR</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#interface">Interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples_1">Examples</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#operational-notes">Operational Notes</a>
     </li>
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -126,7 +134,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="ingestion">Ingestion<a class="headerlink" href="#ingestion" title="Permanent link">#</a></h1>
+                <h1 id="load-text-pdfs-urls-html-and-images-into-sourcery">Load Text, PDFs, URLs, HTML, and Images into Sourcery<a class="headerlink" href="#load-text-pdfs-urls-html-and-images-into-sourcery" title="Permanent link">#</a></h1>
 <p>Ingestion normalizes heterogeneous inputs into <code>SourceDocument</code>.
 Implementation lives in <code>sourcery/ingest/loaders.py</code>.</p>
 <h2 id="supported-source-types">Supported Source Types<a class="headerlink" href="#supported-source-types" title="Permanent link">#</a></h2>
@@ -136,7 +144,6 @@ Implementation lives in <code>sourcery/ingest/loaders.py</code>.</p>
 <li>PDF files (<code>.pdf</code>, requires <code>pypdf</code>)</li>
 <li>HTML files and raw HTML</li>
 <li>HTTP/HTTPS URLs</li>
-<li>OCR image files: <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.webp</code>, <code>.tiff</code>, <code>.bmp</code> (requires <code>Pillow</code> + <code>pytesseract</code>)</li>
 </ul>
 <h2 id="primary-apis">Primary APIs<a class="headerlink" href="#primary-apis" title="Permanent link">#</a></h2>
 <ul>
@@ -148,7 +155,6 @@ Implementation lives in <code>sourcery/ingest/loaders.py</code>.</p>
 <li><code>load_pdf_document(path, ...)</code></li>
 <li><code>load_html_document(source, raw_html=False, ...)</code></li>
 <li><code>load_url_document(url, ...)</code></li>
-<li><code>load_ocr_image_document(path, ...)</code></li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">#</a></h2>
 <p>Load one source automatically:</p>
@@ -175,20 +181,60 @@ doc = load_html_document(&quot;&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello&lt;/h1&gt
 <li>Missing optional dependency -&gt; <code>SourceryDependencyError</code></li>
 <li>Empty parsed content -&gt; <code>SourceryIngestionError</code></li>
 <li>Invalid URL passed to <code>load_url_document(...)</code> -&gt; <code>SourceryIngestionError</code></li>
-<li>Missing PDF/HTML/image path in dedicated loaders -&gt; <code>SourceryIngestionError</code></li>
+<li>Missing PDF/HTML path in dedicated loaders -&gt; <code>SourceryIngestionError</code></li>
 </ul>
+<h2 id="vlm-ocr">VLM OCR<a class="headerlink" href="#vlm-ocr" title="Permanent link">#</a></h2>
+<p>Image-based text extraction via any vision-language model. Sourcery provides the interface; the model does the work. No OCR-specific dependencies required.</p>
+<h3 id="interface">Interface<a class="headerlink" href="#interface" title="Permanent link">#</a></h3>
+<p><code>VLMOCRBackend</code> is a protocol — implement <code>extract_text(*, image_path, prompt) -&gt; str</code> and it works. Sourcery ships <code>BlackGeorgeVLMOCRBackend</code> which delegates to blackgeorge's multimodal worker. Swap the <code>runtime.model</code> to use any VLM your provider supports.</p>
+<h3 id="examples_1">Examples<a class="headerlink" href="#examples_1" title="Permanent link">#</a></h3>
+<pre><code class="language-python">from sourcery.contracts import RuntimeConfig
+from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
+
+backend = BlackGeorgeVLMOCRBackend(
+    RuntimeConfig(model=&quot;gemini/gemini-2.5-flash&quot;, temperature=0.0),
+)
+
+doc = load_vlm_ocr_document(&quot;scan.png&quot;, backend=backend)
+</code></pre>
+<p>With a custom prompt for structured extraction:</p>
+<pre><code class="language-python">doc = load_vlm_ocr_document(
+    &quot;invoice.jpg&quot;,
+    backend=backend,
+    prompt=&quot;Extract invoice number, date, total amount, and line items as a table.&quot;,
+)
+</code></pre>
+<p>Batch processing:</p>
+<pre><code class="language-python">from sourcery.ingest import load_vlm_ocr_documents
+
+docs = load_vlm_ocr_documents(
+    [&quot;page1.png&quot;, &quot;page2.png&quot;, &quot;page3.png&quot;],
+    backend=backend,
+)
+</code></pre>
+<p>Custom backend for any VLM:</p>
+<pre><code class="language-python">from sourcery.ingest import VLMOCRBackend
+
+class MyVLMBackend:
+    def extract_text(self, *, image_path, prompt=None):
+        # call your model here
+        return extracted_text
+
+assert isinstance(MyVLMBackend(), VLMOCRBackend)  # True
+doc = load_vlm_ocr_document(&quot;scan.png&quot;, backend=MyVLMBackend())
+</code></pre>
 <h2 id="operational-notes">Operational Notes<a class="headerlink" href="#operational-notes" title="Permanent link">#</a></h2>
 <ul>
 <li>URL ingestion auto-detects PDF vs HTML vs plain text by content type and payload.</li>
-<li>OCR requires system Tesseract to be installed in addition to Python packages.</li>
 <li><code>load_source_document("missing/path.txt")</code> does not raise by default; because the path does not exist, it is treated as inline text. Use dedicated loaders when you require strict path existence checks.</li>
+<li>VLM OCR loaders raise <code>SourceryIngestionError</code> on missing files or empty model output.</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../runtime-and-tuning/" class="btn btn-neutral float-left" title="Runtime And Tuning"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../outputs-and-reviewer/" class="btn btn-neutral float-right" title="Outputs And Reviewer">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../runtime-and-tuning/" class="btn btn-neutral float-left" title="Runtime and Tuning"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../outputs-and-reviewer/" class="btn btn-neutral float-right" title="Outputs and Reviewer">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>

@@ -1,4 +1,4 @@
-# Outputs And Reviewer
+# Sourcery Outputs: JSONL, HTML Viewer, and Reviewer UI
 
 Sourcery supports machine-friendly persistence and human review workflows.
 

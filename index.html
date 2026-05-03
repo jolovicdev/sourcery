@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="Build and run schema-first extraction pipelines with Sourcery." /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="Sourcery is a Python LLM extraction framework for converting text, PDFs, URLs, HTML, and VLM OCR image sources into typed, source-grounded Pydantic data with JSONL and HTML review workflows." /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/" />
       <link rel="shortcut icon" href="img/favicon.ico" />
     <title>Sourcery Documentation</title>
     <link rel="stylesheet" href="css/theme.css" />
@@ -64,21 +64,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="guides/build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="guides/code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="guides/usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="guides/ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="guides/benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="guides/testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -125,14 +125,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="sourcery">Sourcery<a class="headerlink" href="#sourcery" title="Permanent link">#</a></h1>
-<p>Sourcery is a schema-first extraction framework for turning unstructured text, files, URLs, and documents into typed, grounded entities.</p>
-<p>If you can define your target entities as Pydantic models, you can run reproducible extraction pipelines with traceability, retry policy, and reviewable outputs.</p>
+                <h1 id="sourcery-schema-first-llm-document-extraction-for-python">Sourcery: Schema-First LLM Document Extraction for Python<a class="headerlink" href="#sourcery-schema-first-llm-document-extraction-for-python" title="Permanent link">#</a></h1>
+<p>Sourcery converts unstructured text, PDFs, HTML, URLs, and image OCR output into typed, source-grounded Pydantic data.</p>
+<p>If you can define your target entities as Pydantic models, you can run reproducible LLM extraction pipelines with deterministic chunking, source-span alignment, retry policy, async execution, streaming chunk events, and reviewable outputs.</p>
 <h2 id="what-you-build-with-it">What You Build With It<a class="headerlink" href="#what-you-build-with-it" title="Permanent link">#</a></h2>
 <ul>
 <li>Typed entity extraction with strict schema validation.</li>
 <li>Character-grounded spans (<code>char_start</code>, <code>char_end</code>) for each extraction.</li>
 <li>Deterministic chunking, alignment, and merge behavior.</li>
+<li>Optional document-level reconciliation into canonical claims.</li>
+<li>Native async extraction and chunk-level streaming events.</li>
 <li>JSONL + HTML outputs for downstream systems and human review.</li>
 </ul>
 <h2 id="core-boundaries">Core Boundaries<a class="headerlink" href="#core-boundaries" title="Permanent link">#</a></h2>
@@ -239,5 +241,5 @@ PY
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-03-01 16:46:15.422794+00:00
+Build Date UTC : 2026-05-03 15:39:58.759406+00:00
 -->

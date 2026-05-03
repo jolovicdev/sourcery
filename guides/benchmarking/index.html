@@ -52,17 +52,17 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Benchmarking</a>
     <ul class="current">
@@ -78,7 +78,7 @@
     </li>
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -126,9 +126,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="benchmarking">Benchmarking<a class="headerlink" href="#benchmarking" title="Permanent link">#</a></h1>
+                <h1 id="benchmark-sourcery-extraction-runs">Benchmark Sourcery Extraction Runs<a class="headerlink" href="#benchmark-sourcery-extraction-runs" title="Permanent link">#</a></h1>
 <p>Sourcery provides a benchmark CLI: <code>sourcery-benchmark</code>.</p>
-<p>This runner currently benchmarks both Sourcery and LangExtract in the same run.</p>
+<p>The current runner records Sourcery and LangExtract extraction metrics in the same run.</p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">#</a></h2>
 <pre><code class="language-bash">uv sync --extra benchmark
 </code></pre>
@@ -175,15 +175,15 @@
 </ul>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">#</a></h2>
 <ul>
-<li><code>langextract[openai]</code> is required for LangExtract benchmark execution.</li>
+<li><code>langextract[openai]</code> is required for the LangExtract side of the benchmark.</li>
 <li>Model/provider connection settings are normalized internally from the selected <code>--sourcery-model</code> route.</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../outputs-and-reviewer/" class="btn btn-neutral float-left" title="Outputs And Reviewer"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../testing-and-validation/" class="btn btn-neutral float-right" title="Testing And Validation">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../outputs-and-reviewer/" class="btn btn-neutral float-left" title="Outputs and Reviewer"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../testing-and-validation/" class="btn btn-neutral float-right" title="Testing and Validation">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>

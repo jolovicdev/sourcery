@@ -1,23 +1,25 @@
 # Sourcery Documentation
 
-> Build and run schema-first extraction pipelines with Sourcery.
+> Sourcery is a Python LLM extraction framework for converting text, PDFs, URLs, HTML, and VLM OCR image sources into typed, source-grounded Pydantic data with JSONL and HTML review workflows.
 
-Sourcery is a schema-first extraction framework for converting unstructured text, files, and URLs into typed, grounded entities with traceability and reviewable output.
+Sourcery is a Python LLM extraction framework for converting unstructured text, PDFs, URLs, HTML, and VLM OCR image sources into typed, source-grounded Pydantic data with async extraction, streaming chunk events, traceability, and reviewable output.
 
 
 # Getting Started
 
-# Sourcery
+# Sourcery: Schema-First LLM Document Extraction for Python
 
-Sourcery is a schema-first extraction framework for turning unstructured text, files, URLs, and documents into typed, grounded entities.
+Sourcery converts unstructured text, PDFs, HTML, URLs, and image OCR output into typed, source-grounded Pydantic data.
 
-If you can define your target entities as Pydantic models, you can run reproducible extraction pipelines with traceability, retry policy, and reviewable outputs.
+If you can define your target entities as Pydantic models, you can run reproducible LLM extraction pipelines with deterministic chunking, source-span alignment, retry policy, async execution, streaming chunk events, and reviewable outputs.
 
 ## What You Build With It
 
 - Typed entity extraction with strict schema validation.
 - Character-grounded spans (`char_start`, `char_end`) for each extraction.
 - Deterministic chunking, alignment, and merge behavior.
+- Optional document-level reconciliation into canonical claims.
+- Native async extraction and chunk-level streaming events.
 - JSONL + HTML outputs for downstream systems and human review.
 
 ## Core Boundaries
@@ -83,7 +85,7 @@ Build static docs with strict validation:
 uv run --extra docs mkdocs build --strict
 ```
 
-# Installation
+# Install Sourcery for Python LLM Extraction
 
 ## Requirements
 
@@ -109,7 +111,7 @@ Install from PyPI:
 pip install sourceryforge
 ```
 
-With ingestion adapters (PDF/OCR/URL workflows):
+With ingestion adapters (PDF/URL workflows):
 
 ```
 uv sync --extra ingest
@@ -182,9 +184,9 @@ uv run --extra dev ruff check sourcery tests
 uv run --extra dev mypy sourcery
 ```
 
-# Quickstart
+# Sourcery Quickstart: Extract Typed Data from Text with an LLM
 
-This quickstart creates a typed extraction task, runs extraction, and writes reviewable outputs.
+This quickstart creates a Pydantic-backed extraction task, runs LLM extraction, and writes source-grounded JSONL plus HTML review outputs.
 
 ## 1. Create `quickstart.py`
 
@@ -277,13 +279,13 @@ result = await sourcery.aextract(request)
 
 ## What To Do Next
 
-- Move to [Build A Pipeline](https://jolovicdev.github.io/sourcery/guides/build-a-pipeline/index.md) for mixed-source ingestion.
-- Move to [Runtime And Tuning](https://jolovicdev.github.io/sourcery/guides/runtime-and-tuning/index.md) for reliability/throughput tuning.
+- Move to [Build a Pipeline](https://jolovicdev.github.io/sourcery/guides/build-a-pipeline/index.md) for mixed-source ingestion.
+- Move to [Runtime and Tuning](https://jolovicdev.github.io/sourcery/guides/runtime-and-tuning/index.md) for reliability/throughput tuning.
 # Guides
 
-# Build A Pipeline
+# Build a Document Extraction Pipeline with Sourcery
 
-This guide shows a production-oriented extraction workflow from mixed sources to review output.
+This guide shows a production-oriented LLM extraction workflow from mixed sources to source-grounded review output.
 
 ## 1. Define Entity Schemas
 
@@ -390,7 +392,7 @@ if raw_run_id is not None:
 
 Use replay for provider debugging, audits, or incident postmortems.
 
-# CODE_EXAMPLES.md
+# Sourcery Code Examples for Python LLM Extraction
 
 Practical examples for the current Sourcery API.
 
@@ -570,7 +572,7 @@ print(result.metrics.documents_total)
 Notes:
 
 - PDF ingestion requires `pypdf`.
-- OCR image ingestion requires `pillow` and `pytesseract`.
+- Image ingestion uses VLM OCR via any vision model (see section 10).
 
 ## 4) Async extraction
 
@@ -842,7 +844,51 @@ except SourceryProviderError as exc:
     print("Provider/runtime error:", exc)
 ```
 
-## 10) Benchmark command
+## 10) VLM image OCR
+
+```
+from sourcery.contracts import RuntimeConfig
+from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
+
+backend = BlackGeorgeVLMOCRBackend(
+    RuntimeConfig(model="provider/vision-model", temperature=0.0),
+)
+doc = load_vlm_ocr_document("invoice.png", backend=backend)
+# doc is a SourceDocument — feed it into extract() like any other document
+```
+
+Custom backend for any VLM:
+
+```
+from sourcery.ingest import VLMOCRBackend
+
+class MyBackend:
+    def extract_text(self, *, image_path, prompt=None):
+        return call_your_vision_model(image_path, prompt)
+
+assert isinstance(MyBackend(), VLMOCRBackend)
+doc = load_vlm_ocr_document("scan.png", backend=MyBackend())
+```
+
+## 11) Streaming extraction
+
+```
+from sourcery.contracts import StreamExtractionAdded, StreamChunkDone, StreamPassDone
+from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(f"New: {event.extraction.entity}='{event.extraction.text}'")
+    elif isinstance(event, StreamChunkDone):
+        print(f"Chunk {event.chunk_id} done ({event.candidates_found} candidates)")
+    elif isinstance(event, StreamPassDone):
+        print(f"Pass {event.pass_id} done (+{event.additions_this_pass})")
+
+# The generator returns ExtractResult through StopIteration.value if manually consumed.
+```
+
+## 12) Benchmark command
 
 ```
 uv run sourcery-benchmark \
@@ -859,16 +905,16 @@ Compatibility wrapper:
 uv run benchmark_compare.py --text-types english
 ```
 
-# Sourcery Usage Guide
+# Sourcery Usage Guide for Python LLM Extraction
 
 ## What Sourcery Is
 
 Sourcery is both:
 
-1. A **Python library** you import (`import sourcery`) to run schema-first extraction.
+1. A **Python library** you import (`import sourcery`) to run schema-first LLM extraction.
 1. A **reference project** with ingestion adapters, HTML reviewer UI, and runnable integration scripts.
 
-Use it as a library inside your app, and use this repository as a production template.
+Use it as a library inside your app, and use this repository as a production template for typed, source-grounded document extraction.
 
 ## When To Use Sourcery
 
@@ -890,7 +936,7 @@ Minimal runtime:
 uv sync
 ```
 
-With ingestion adapters (PDF/OCR/URL HTML):
+With ingestion adapters (PDF/URL/HTML):
 
 ```
 uv sync --extra ingest
@@ -912,7 +958,13 @@ Import-level API (`sourcery/__init__.py`):
 1. `aextract(request: ExtractRequest, engine: SourceryEngine | None = None) -> ExtractResult`
 1. `extract_from_sources(sources, *, task, runtime, options=None, engine=None) -> ExtractResult`
 1. `aextract_from_sources(...) -> ExtractResult`
-1. `SourceryEngine` with `.extract(...)`, `.aextract(...)`, `.replay_run(...)`
+1. `SourceryEngine` with `.extract(...)`, `.aextract(...)`, `.extract_stream(...)`, `.replay_run(...)`
+
+Streaming event contracts live in `sourcery.contracts`:
+
+- `StreamExtractionAdded`
+- `StreamChunkDone`
+- `StreamPassDone`
 
 ## Data Contracts You Define
 
@@ -992,6 +1044,8 @@ Document-level reconciliation (optional):
 - `min_mentions_for_claim=1`
 - `max_claims=200`
 
+`RuntimeConfig.stream` is passed to the underlying BlackGeorge runtime/provider. For Sourcery-level chunk progress, use `SourceryEngine.extract_stream(...)`.
+
 ## Extraction Options (`ExtractOptions`)
 
 - `max_chunk_chars=1200`
@@ -1068,12 +1122,12 @@ Supported ingestion via `load_source_document(s)`:
 1. PDF files (`pypdf`)
 1. HTML files / raw HTML
 1. URLs
-1. OCR image files (`Pillow` + `pytesseract`)
+1. Image files via VLM OCR (`sourcery.ingest.load_vlm_ocr_document`)
 
 Notes:
 
 - PDF loader is text-extraction first (`pypdf`).
-- OCR is currently image-based ingestion, not multimodal LLM extraction.
+- Image ingestion uses any vision-language model through blackgeorge multimodal support.
 
 Notebook equivalent: `examples/notebooks/sourcery_pdf_workflow.ipynb`
 
@@ -1081,6 +1135,25 @@ Notebook equivalent: `examples/notebooks/sourcery_pdf_workflow.ipynb`
 
 ```
 result = await sourcery.aextract(request)
+```
+
+## Streaming Extraction
+
+`extract_stream(...)` yields chunk-level Sourcery events as extraction work completes. It is result/progress streaming, not token streaming.
+
+```
+from sourcery.contracts import StreamChunkDone, StreamExtractionAdded, StreamPassDone
+from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(event.document_id, event.extraction.entity, event.extraction.text)
+    elif isinstance(event, StreamChunkDone):
+        print("chunk done:", event.chunk_id, event.candidates_found)
+    elif isinstance(event, StreamPassDone):
+        print("pass done:", event.pass_id, event.additions_this_pass)
 ```
 
 ## Advanced Engine Usage
@@ -1180,7 +1253,7 @@ uv run --extra dev mypy sourcery
 1. Keep reviewer approval in-the-loop for high-stakes workflows.
 1. Persist JSONL + run trace for audit and replay.
 
-# Runtime And Tuning
+# Tune Sourcery Runtime: Async, Streaming, Retries, and Reconciliation
 
 Use `RuntimeConfig` for provider/runtime behavior and `ExtractOptions` for deterministic pipeline controls.
 
@@ -1197,6 +1270,8 @@ Common:
 - `stream`
 - `storage_dir`
 - `respect_context_window`
+
+`RuntimeConfig.stream` is passed through to the BlackGeorge runtime/provider. For application-level progress events, use `SourceryEngine.extract_stream(...)`.
 
 Retry policy (`retry`):
 
@@ -1230,6 +1305,8 @@ Optional workflows:
 
 - If `allow_unresolved=False` (default), unresolved candidates are counted in metrics but not returned in `documents[*].extractions`.
 - If `strict_example_alignment=True` (default in `ExtractionTask`) and examples are unresolved, extraction raises `ExampleValidationError` before runtime execution.
+- `SourceryEngine.aextract(...)` uses native async runtime calls.
+- `SourceryEngine.extract_stream(...)` emits chunk/pass result events and still returns the same final `ExtractResult` when exhausted.
 - If reconciliation workforce fails at runtime, the engine falls back to deterministic canonical-claim construction and records warnings.
 
 ## Practical Baseline
@@ -1285,7 +1362,7 @@ options = ExtractOptions(
 1. Increase `max_passes` only when extraction recall improves materially.
 1. Increase concurrency only if provider limits and system resources allow it.
 
-# Ingestion
+# Load Text, PDFs, URLs, HTML, and Images into Sourcery
 
 Ingestion normalizes heterogeneous inputs into `SourceDocument`. Implementation lives in `sourcery/ingest/loaders.py`.
 
@@ -1296,7 +1373,6 @@ Ingestion normalizes heterogeneous inputs into `SourceDocument`. Implementation 
 - PDF files (`.pdf`, requires `pypdf`)
 - HTML files and raw HTML
 - HTTP/HTTPS URLs
-- OCR image files: `.png`, `.jpg`, `.jpeg`, `.webp`, `.tiff`, `.bmp` (requires `Pillow` + `pytesseract`)
 
 ## Primary APIs
 
@@ -1308,7 +1384,6 @@ Extended APIs:
 - `load_pdf_document(path, ...)`
 - `load_html_document(source, raw_html=False, ...)`
 - `load_url_document(url, ...)`
-- `load_ocr_image_document(path, ...)`
 
 ## Examples
 
@@ -1345,15 +1420,71 @@ doc = load_html_document("<html><body><h1>Hello</h1></body></html>", raw_html=Tr
 - Missing optional dependency -> `SourceryDependencyError`
 - Empty parsed content -> `SourceryIngestionError`
 - Invalid URL passed to `load_url_document(...)` -> `SourceryIngestionError`
-- Missing PDF/HTML/image path in dedicated loaders -> `SourceryIngestionError`
+- Missing PDF/HTML path in dedicated loaders -> `SourceryIngestionError`
+
+## VLM OCR
+
+Image-based text extraction via any vision-language model. Sourcery provides the interface; the model does the work. No OCR-specific dependencies required.
+
+### Interface
+
+`VLMOCRBackend` is a protocol — implement `extract_text(*, image_path, prompt) -> str` and it works. Sourcery ships `BlackGeorgeVLMOCRBackend` which delegates to blackgeorge's multimodal worker. Swap the `runtime.model` to use any VLM your provider supports.
+
+### Examples
+
+```
+from sourcery.contracts import RuntimeConfig
+from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
+
+backend = BlackGeorgeVLMOCRBackend(
+    RuntimeConfig(model="gemini/gemini-2.5-flash", temperature=0.0),
+)
+
+doc = load_vlm_ocr_document("scan.png", backend=backend)
+```
+
+With a custom prompt for structured extraction:
+
+```
+doc = load_vlm_ocr_document(
+    "invoice.jpg",
+    backend=backend,
+    prompt="Extract invoice number, date, total amount, and line items as a table.",
+)
+```
+
+Batch processing:
+
+```
+from sourcery.ingest import load_vlm_ocr_documents
+
+docs = load_vlm_ocr_documents(
+    ["page1.png", "page2.png", "page3.png"],
+    backend=backend,
+)
+```
+
+Custom backend for any VLM:
+
+```
+from sourcery.ingest import VLMOCRBackend
+
+class MyVLMBackend:
+    def extract_text(self, *, image_path, prompt=None):
+        # call your model here
+        return extracted_text
+
+assert isinstance(MyVLMBackend(), VLMOCRBackend)  # True
+doc = load_vlm_ocr_document("scan.png", backend=MyVLMBackend())
+```
 
 ## Operational Notes
 
 - URL ingestion auto-detects PDF vs HTML vs plain text by content type and payload.
-- OCR requires system Tesseract to be installed in addition to Python packages.
 - `load_source_document("missing/path.txt")` does not raise by default; because the path does not exist, it is treated as inline text. Use dedicated loaders when you require strict path existence checks.
+- VLM OCR loaders raise `SourceryIngestionError` on missing files or empty model output.
 
-# Outputs And Reviewer
+# Sourcery Outputs: JSONL, HTML Viewer, and Reviewer UI
 
 Sourcery supports machine-friendly persistence and human review workflows.
 
@@ -1432,11 +1563,11 @@ Reviewer capabilities:
 - export approved rows to JSONL and CSV,
 - persist review state in browser local storage.
 
-# Benchmarking
+# Benchmark Sourcery Extraction Runs
 
 Sourcery provides a benchmark CLI: `sourcery-benchmark`.
 
-This runner currently benchmarks both Sourcery and LangExtract in the same run.
+The current runner records Sourcery and LangExtract extraction metrics in the same run.
 
 ## Prerequisites
 
@@ -1498,10 +1629,10 @@ A timestamped JSON report in `benchmark_results/` containing:
 
 ## Notes
 
-- `langextract[openai]` is required for LangExtract benchmark execution.
+- `langextract[openai]` is required for the LangExtract side of the benchmark.
 - Model/provider connection settings are normalized internally from the selected `--sourcery-model` route.
 
-# Testing And Validation
+# Test and Validate Sourcery
 
 Run the full validation suite before merging changes.
 
@@ -1540,9 +1671,9 @@ When fixing a bug:
 1. Run focused tests, then the full suite.
 # Architecture
 
-# System Overview
+# Sourcery System Overview
 
-Sourcery is structured as replaceable black boxes around typed contracts.
+Sourcery is structured as replaceable runtime and pipeline components around stable typed contracts.
 
 ## Primary Primitives
 
@@ -1580,11 +1711,13 @@ These primitives are the stable interface. Internal implementation can change wi
 1. Optionally reconcile canonical claims.
 1. Emit `ExtractResult` with metrics, warnings, and run trace.
 
+Sync, async, and streaming entry points share this lifecycle. Streaming emits chunk/pass progress events while preserving the same final result shape.
+
 ## Determinism Notes
 
 Determinism is strongest in pipeline logic (`chunking`, `aligner`, `merger`). Runtime behavior may vary with provider/model behavior, but deterministic options plus strict examples reduce drift.
 
-# Pipeline Internals
+# Sourcery Pipeline Internals: Chunking, Alignment, and Merge
 
 Pipeline modules are deterministic and side-effect free.
 
@@ -1646,7 +1779,7 @@ Responsibilities:
 - Emit issues with statuses (`fuzzy`, `unresolved`) when exact span matching fails.
 - Raise `ExampleValidationError` when strict mode requires it.
 
-# Runtime Internals
+# Sourcery Runtime Internals: Async, Streaming, and Replay
 
 ## Engine
 
@@ -1663,7 +1796,10 @@ Public entry points:
 
 - `SourceryEngine.extract(request)`
 - `SourceryEngine.aextract(request)`
+- `SourceryEngine.extract_stream(request)`
 - `SourceryEngine.replay_run(request, raw_run_id)`
+
+`extract_stream(...)` is Sourcery-level result streaming: chunks still run through the normal runtime path, but the engine emits `StreamExtractionAdded`, `StreamChunkDone`, and `StreamPassDone` events as merged results become available.
 
 ## Runtime Boundary
 
@@ -1671,8 +1807,11 @@ Protocols in `sourcery/runtime/base.py` define black-box contracts:
 
 - `ChunkRuntime`
 - `DocumentReconciliationRuntime`
+- `AsyncDocumentReconciliationRuntime`
 
 Any runtime implementation that satisfies these interfaces can be swapped in.
+
+`EngineDependencies` wires the runtime factory, prompt compiler, example validator, chunk planner, aligner, merger, and trace collector. This keeps the engine testable without making those dependency hooks decorative.
 
 ## BlackGeorge Runtime Composition
 
@@ -1701,7 +1840,7 @@ When reconciliation is enabled:
 1. Non-Sourcery unexpected exceptions are propagated.
 # Reference
 
-# Public API
+# Sourcery Public API Reference
 
 Top-level exports are defined in `sourcery/__init__.py`.
 
@@ -1719,6 +1858,7 @@ aextract_from_sources(sources, *, task, runtime, options=None, engine=None) -> E
 ```
 SourceryEngine.extract(request) -> ExtractResult
 SourceryEngine.aextract(request) -> ExtractResult
+SourceryEngine.extract_stream(request) -> Generator[StreamEvent, None, ExtractResult]
 SourceryEngine.replay_run(request, raw_run_id) -> tuple[dict[str, object] | None, list[EventRecord]]
 ```
 
@@ -1731,6 +1871,11 @@ SourceryEngine.replay_run(request, raw_run_id) -> tuple[dict[str, object] | None
 - `AlignedExtraction`, `CanonicalClaim`, `DocumentResult`, `DocumentReconciliationReport`
 - `ExtractionRunTrace`, `RunMetrics`, `SourceDocument`
 
+Additional contracts from `sourcery.contracts`:
+
+- `StreamExtractionAdded`, `StreamChunkDone`, `StreamPassDone`
+- `EngineDependencies`
+
 ## Ingestion Exports
 
 From `sourcery.ingest`:
@@ -1740,7 +1885,10 @@ From `sourcery.ingest`:
 - `load_pdf_document(...)`
 - `load_html_document(...)`
 - `load_url_document(...)`
-- `load_ocr_image_document(...)`
+- `load_vlm_ocr_document(...)`
+- `load_vlm_ocr_documents(...)`
+- `VLMOCRBackend` — protocol for custom VLM OCR backends
+- `BlackGeorgeVLMOCRBackend(...)` — blackgeorge multimodal implementation
 
 Top-level shortcut (`import sourcery`) includes only:
 
@@ -1777,7 +1925,7 @@ result = sourcery.extract_from_sources(
 )
 ```
 
-# Data Contracts
+# Sourcery Data Contracts and Pydantic Schemas
 
 All contracts are defined in `sourcery/contracts/models.py`.
 
@@ -1818,6 +1966,11 @@ All contracts are defined in `sourcery/contracts/models.py`.
 
 - `EventRecord`
 - `ExtractionProvenance`
+- `StreamExtractionAdded`
+- `StreamChunkDone`
+- `StreamPassDone`
+
+Streaming events are emitted by `SourceryEngine.extract_stream(...)` as chunk results land. They report added extractions, completed chunks, and completed passes; the final `ExtractResult` is returned when the generator is exhausted.
 
 ## Validation Guarantees
 
@@ -1844,7 +1997,7 @@ schema = EntitySchemaSet(
 )
 ```
 
-# Error Model
+# Sourcery Error Model
 
 Exceptions are defined in `sourcery/exceptions.py`.
 
@@ -1879,7 +2032,7 @@ Use these to distinguish deterministic task/schema/pipeline problems from runtim
 - `SourceryIngestionError`
 - `SourceryDependencyError`
 
-Dependency errors indicate missing optional packages (`pypdf`, `Pillow`, `pytesseract`).
+Dependency errors indicate missing optional packages (`pypdf`).
 
 ## Runtime Classification Behavior
 
@@ -1917,7 +2070,7 @@ except SourceryRuntimeError as exc:
     print("Runtime failure:", exc, "context:", exc.context)
 ```
 
-# File-by-File Map
+# Sourcery File-by-File Map
 
 This map links each tracked module to its responsibility.
 

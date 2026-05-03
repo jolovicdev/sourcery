@@ -1,8 +1,8 @@
-# Benchmarking
+# Benchmark Sourcery Extraction Runs
 
 Sourcery provides a benchmark CLI: `sourcery-benchmark`.
 
-This runner currently benchmarks both Sourcery and LangExtract in the same run.
+The current runner records Sourcery and LangExtract extraction metrics in the same run.
 
 ## Prerequisites
 
@@ -64,5 +64,5 @@ A timestamped JSON report in `benchmark_results/` containing:
 
 ## Notes
 
-- `langextract[openai]` is required for LangExtract benchmark execution.
+- `langextract[openai]` is required for the LangExtract side of the benchmark.
 - Model/provider connection settings are normalized internally from the selected `--sourcery-model` route.

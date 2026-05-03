@@ -52,21 +52,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -128,7 +128,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="public-api">Public API<a class="headerlink" href="#public-api" title="Permanent link">#</a></h1>
+                <h1 id="sourcery-public-api-reference">Sourcery Public API Reference<a class="headerlink" href="#sourcery-public-api-reference" title="Permanent link">#</a></h1>
 <p>Top-level exports are defined in <code>sourcery/__init__.py</code>.</p>
 <h2 id="core-functions">Core Functions<a class="headerlink" href="#core-functions" title="Permanent link">#</a></h2>
 <pre><code class="language-python">extract(request, engine=None) -&gt; ExtractResult
@@ -139,6 +139,7 @@ aextract_from_sources(sources, *, task, runtime, options=None, engine=None) -&gt
 <h2 id="runtime-entry-points">Runtime Entry Points<a class="headerlink" href="#runtime-entry-points" title="Permanent link">#</a></h2>
 <pre><code class="language-python">SourceryEngine.extract(request) -&gt; ExtractResult
 SourceryEngine.aextract(request) -&gt; ExtractResult
+SourceryEngine.extract_stream(request) -&gt; Generator[StreamEvent, None, ExtractResult]
 SourceryEngine.replay_run(request, raw_run_id) -&gt; tuple[dict[str, object] | None, list[EventRecord]]
 </code></pre>
 <h2 id="top-level-contract-exports-import-sourcery">Top-Level Contract Exports (<code>import sourcery</code>)<a class="headerlink" href="#top-level-contract-exports-import-sourcery" title="Permanent link">#</a></h2>
@@ -150,6 +151,11 @@ SourceryEngine.replay_run(request, raw_run_id) -&gt; tuple[dict[str, object] | N
 <li><code>AlignedExtraction</code>, <code>CanonicalClaim</code>, <code>DocumentResult</code>, <code>DocumentReconciliationReport</code></li>
 <li><code>ExtractionRunTrace</code>, <code>RunMetrics</code>, <code>SourceDocument</code></li>
 </ul>
+<p>Additional contracts from <code>sourcery.contracts</code>:</p>
+<ul>
+<li><code>StreamExtractionAdded</code>, <code>StreamChunkDone</code>, <code>StreamPassDone</code></li>
+<li><code>EngineDependencies</code></li>
+</ul>
 <h2 id="ingestion-exports">Ingestion Exports<a class="headerlink" href="#ingestion-exports" title="Permanent link">#</a></h2>
 <p>From <code>sourcery.ingest</code>:</p>
 <ul>
@@ -158,7 +164,10 @@ SourceryEngine.replay_run(request, raw_run_id) -&gt; tuple[dict[str, object] | N
 <li><code>load_pdf_document(...)</code></li>
 <li><code>load_html_document(...)</code></li>
 <li><code>load_url_document(...)</code></li>
-<li><code>load_ocr_image_document(...)</code></li>
+<li><code>load_vlm_ocr_document(...)</code></li>
+<li><code>load_vlm_ocr_documents(...)</code></li>
+<li><code>VLMOCRBackend</code> — protocol for custom VLM OCR backends</li>
+<li><code>BlackGeorgeVLMOCRBackend(...)</code> — blackgeorge multimodal implementation</li>
 </ul>
 <p>Top-level shortcut (<code>import sourcery</code>) includes only:</p>
 <ul>

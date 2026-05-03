@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://jolovicdev.github.io/sourcery/guides/runtime-and-tuning/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>Runtime And Tuning - Sourcery Documentation</title>
+    <title>Runtime and Tuning - Sourcery Documentation</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Runtime And Tuning";
+        var mkdocs_page_name = "Runtime and Tuning";
         var mkdocs_page_input_path = "guides/runtime-and-tuning.md";
         var mkdocs_page_url = "/sourcery/guides/runtime-and-tuning/";
       </script>
@@ -52,13 +52,13 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Runtime And Tuning</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Runtime and Tuning</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#runtimeconfig">RuntimeConfig</a>
     </li>
@@ -78,11 +78,11 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -120,7 +120,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Guides</li>
-      <li class="breadcrumb-item active">Runtime And Tuning</li>
+      <li class="breadcrumb-item active">Runtime and Tuning</li>
     <li class="wy-breadcrumbs-aside">
           <a href="https://github.com/jolovicdev/sourcery/edit/master/docs/guides/runtime-and-tuning.md">Edit on sourceryforge</a>
     </li>
@@ -130,7 +130,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="runtime-and-tuning">Runtime And Tuning<a class="headerlink" href="#runtime-and-tuning" title="Permanent link">#</a></h1>
+                <h1 id="tune-sourcery-runtime-async-streaming-retries-and-reconciliation">Tune Sourcery Runtime: Async, Streaming, Retries, and Reconciliation<a class="headerlink" href="#tune-sourcery-runtime-async-streaming-retries-and-reconciliation" title="Permanent link">#</a></h1>
 <p>Use <code>RuntimeConfig</code> for provider/runtime behavior and <code>ExtractOptions</code> for deterministic pipeline controls.</p>
 <h2 id="runtimeconfig">RuntimeConfig<a class="headerlink" href="#runtimeconfig" title="Permanent link">#</a></h2>
 <p>Required:</p>
@@ -145,6 +145,7 @@
 <li><code>storage_dir</code></li>
 <li><code>respect_context_window</code></li>
 </ul>
+<p><code>RuntimeConfig.stream</code> is passed through to the BlackGeorge runtime/provider. For application-level progress events, use <code>SourceryEngine.extract_stream(...)</code>.</p>
 <p>Retry policy (<code>retry</code>):</p>
 <ul>
 <li><code>max_attempts</code></li>
@@ -177,6 +178,8 @@
 <ul>
 <li>If <code>allow_unresolved=False</code> (default), unresolved candidates are counted in metrics but not returned in <code>documents[*].extractions</code>.</li>
 <li>If <code>strict_example_alignment=True</code> (default in <code>ExtractionTask</code>) and examples are unresolved, extraction raises <code>ExampleValidationError</code> before runtime execution.</li>
+<li><code>SourceryEngine.aextract(...)</code> uses native async runtime calls.</li>
+<li><code>SourceryEngine.extract_stream(...)</code> emits chunk/pass result events and still returns the same final <code>ExtractResult</code> when exhausted.</li>
 <li>If reconciliation workforce fails at runtime, the engine falls back to deterministic canonical-claim construction and records warnings.</li>
 </ul>
 <h2 id="practical-baseline">Practical Baseline<a class="headerlink" href="#practical-baseline" title="Permanent link">#</a></h2>

@@ -52,7 +52,7 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../code-examples/">Code Examples</a>
                   </li>
@@ -90,6 +90,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#async-usage">Async Usage</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#streaming-extraction">Streaming Extraction</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#advanced-engine-usage">Advanced Engine Usage</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#enabling-reconciliation-session-refinement">Enabling Reconciliation + Session Refinement</a>
@@ -118,15 +120,15 @@
     </li>
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -174,14 +176,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="sourcery-usage-guide">Sourcery Usage Guide<a class="headerlink" href="#sourcery-usage-guide" title="Permanent link">#</a></h1>
+                <h1 id="sourcery-usage-guide-for-python-llm-extraction">Sourcery Usage Guide for Python LLM Extraction<a class="headerlink" href="#sourcery-usage-guide-for-python-llm-extraction" title="Permanent link">#</a></h1>
 <h2 id="what-sourcery-is">What Sourcery Is<a class="headerlink" href="#what-sourcery-is" title="Permanent link">#</a></h2>
 <p>Sourcery is both:</p>
 <ol>
-<li>A <strong>Python library</strong> you import (<code>import sourcery</code>) to run schema-first extraction.</li>
+<li>A <strong>Python library</strong> you import (<code>import sourcery</code>) to run schema-first LLM extraction.</li>
 <li>A <strong>reference project</strong> with ingestion adapters, HTML reviewer UI, and runnable integration scripts.</li>
 </ol>
-<p>Use it as a library inside your app, and use this repository as a production template.</p>
+<p>Use it as a library inside your app, and use this repository as a production template for typed, source-grounded document extraction.</p>
 <h2 id="when-to-use-sourcery">When To Use Sourcery<a class="headerlink" href="#when-to-use-sourcery" title="Permanent link">#</a></h2>
 <p>Use Sourcery when you need:</p>
 <ul>
@@ -196,7 +198,7 @@
 <p>Minimal runtime:</p>
 <pre><code class="language-bash">uv sync
 </code></pre>
-<p>With ingestion adapters (PDF/OCR/URL HTML):</p>
+<p>With ingestion adapters (PDF/URL/HTML):</p>
 <pre><code class="language-bash">uv sync --extra ingest
 </code></pre>
 <p>With dev tooling:</p>
@@ -210,8 +212,14 @@
 <li><code>aextract(request: ExtractRequest, engine: SourceryEngine | None = None) -&gt; ExtractResult</code></li>
 <li><code>extract_from_sources(sources, *, task, runtime, options=None, engine=None) -&gt; ExtractResult</code></li>
 <li><code>aextract_from_sources(...) -&gt; ExtractResult</code></li>
-<li><code>SourceryEngine</code> with <code>.extract(...)</code>, <code>.aextract(...)</code>, <code>.replay_run(...)</code></li>
+<li><code>SourceryEngine</code> with <code>.extract(...)</code>, <code>.aextract(...)</code>, <code>.extract_stream(...)</code>, <code>.replay_run(...)</code></li>
 </ol>
+<p>Streaming event contracts live in <code>sourcery.contracts</code>:</p>
+<ul>
+<li><code>StreamExtractionAdded</code></li>
+<li><code>StreamChunkDone</code></li>
+<li><code>StreamPassDone</code></li>
+</ul>
 <h2 id="data-contracts-you-define">Data Contracts You Define<a class="headerlink" href="#data-contracts-you-define" title="Permanent link">#</a></h2>
 <h3 id="1-entityspec">1) <code>EntitySpec</code><a class="headerlink" href="#1-entityspec" title="Permanent link">#</a></h3>
 <ul>
@@ -288,6 +296,7 @@
 <li><code>min_mentions_for_claim=1</code></li>
 <li><code>max_claims=200</code></li>
 </ul>
+<p><code>RuntimeConfig.stream</code> is passed to the underlying BlackGeorge runtime/provider. For Sourcery-level chunk progress, use <code>SourceryEngine.extract_stream(...)</code>.</p>
 <h2 id="extraction-options-extractoptions">Extraction Options (<code>ExtractOptions</code>)<a class="headerlink" href="#extraction-options-extractoptions" title="Permanent link">#</a></h2>
 <ul>
 <li><code>max_chunk_chars=1200</code></li>
@@ -356,16 +365,31 @@ for ext in result.documents[0].extractions:
 <li>PDF files (<code>pypdf</code>)</li>
 <li>HTML files / raw HTML</li>
 <li>URLs</li>
-<li>OCR image files (<code>Pillow</code> + <code>pytesseract</code>)</li>
+<li>Image files via VLM OCR (<code>sourcery.ingest.load_vlm_ocr_document</code>)</li>
 </ol>
 <p>Notes:</p>
 <ul>
 <li>PDF loader is text-extraction first (<code>pypdf</code>).</li>
-<li>OCR is currently image-based ingestion, not multimodal LLM extraction.</li>
+<li>Image ingestion uses any vision-language model through blackgeorge multimodal support.</li>
 </ul>
 <p>Notebook equivalent: <code>examples/notebooks/sourcery_pdf_workflow.ipynb</code></p>
 <h2 id="async-usage">Async Usage<a class="headerlink" href="#async-usage" title="Permanent link">#</a></h2>
 <pre><code class="language-python">result = await sourcery.aextract(request)
+</code></pre>
+<h2 id="streaming-extraction">Streaming Extraction<a class="headerlink" href="#streaming-extraction" title="Permanent link">#</a></h2>
+<p><code>extract_stream(...)</code> yields chunk-level Sourcery events as extraction work completes. It is result/progress streaming, not token streaming.</p>
+<pre><code class="language-python">from sourcery.contracts import StreamChunkDone, StreamExtractionAdded, StreamPassDone
+from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(event.document_id, event.extraction.entity, event.extraction.text)
+    elif isinstance(event, StreamChunkDone):
+        print(&quot;chunk done:&quot;, event.chunk_id, event.candidates_found)
+    elif isinstance(event, StreamPassDone):
+        print(&quot;pass done:&quot;, event.pass_id, event.additions_this_pass)
 </code></pre>
 <h2 id="advanced-engine-usage">Advanced Engine Usage<a class="headerlink" href="#advanced-engine-usage" title="Permanent link">#</a></h2>
 <pre><code class="language-python">from sourcery.runtime import SourceryEngine
@@ -445,7 +469,7 @@ uv run --extra dev mypy sourcery
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../code-examples/" class="btn btn-neutral float-left" title="Code Examples"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../runtime-and-tuning/" class="btn btn-neutral float-right" title="Runtime And Tuning">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../runtime-and-tuning/" class="btn btn-neutral float-right" title="Runtime and Tuning">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>

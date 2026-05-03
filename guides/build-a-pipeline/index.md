@@ -1,6 +1,6 @@
-# Build A Pipeline
+# Build a Document Extraction Pipeline with Sourcery
 
-This guide shows a production-oriented extraction workflow from mixed sources to review output.
+This guide shows a production-oriented LLM extraction workflow from mixed sources to source-grounded review output.
 
 ## 1. Define Entity Schemas
 

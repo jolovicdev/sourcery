@@ -1,4 +1,4 @@
-# Data Contracts
+# Sourcery Data Contracts and Pydantic Schemas
 
 All contracts are defined in `sourcery/contracts/models.py`.
 
@@ -39,6 +39,11 @@ All contracts are defined in `sourcery/contracts/models.py`.
 
 - `EventRecord`
 - `ExtractionProvenance`
+- `StreamExtractionAdded`
+- `StreamChunkDone`
+- `StreamPassDone`
+
+Streaming events are emitted by `SourceryEngine.extract_stream(...)` as chunk results land. They report added extractions, completed chunks, and completed passes; the final `ExtractResult` is returned when the generator is exhausted.
 
 ## Validation Guarantees
 

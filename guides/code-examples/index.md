@@ -1,4 +1,4 @@
-# CODE_EXAMPLES.md
+# Sourcery Code Examples for Python LLM Extraction
 
 Practical examples for the current Sourcery API.
 
@@ -178,7 +178,7 @@ print(result.metrics.documents_total)
 Notes:
 
 - PDF ingestion requires `pypdf`.
-- OCR image ingestion requires `pillow` and `pytesseract`.
+- Image ingestion uses VLM OCR via any vision model (see section 10).
 
 ## 4) Async extraction
 
@@ -450,7 +450,51 @@ except SourceryProviderError as exc:
     print("Provider/runtime error:", exc)
 ```
 
-## 10) Benchmark command
+## 10) VLM image OCR
+
+```
+from sourcery.contracts import RuntimeConfig
+from sourcery.ingest import BlackGeorgeVLMOCRBackend, load_vlm_ocr_document
+
+backend = BlackGeorgeVLMOCRBackend(
+    RuntimeConfig(model="provider/vision-model", temperature=0.0),
+)
+doc = load_vlm_ocr_document("invoice.png", backend=backend)
+# doc is a SourceDocument — feed it into extract() like any other document
+```
+
+Custom backend for any VLM:
+
+```
+from sourcery.ingest import VLMOCRBackend
+
+class MyBackend:
+    def extract_text(self, *, image_path, prompt=None):
+        return call_your_vision_model(image_path, prompt)
+
+assert isinstance(MyBackend(), VLMOCRBackend)
+doc = load_vlm_ocr_document("scan.png", backend=MyBackend())
+```
+
+## 11) Streaming extraction
+
+```
+from sourcery.contracts import StreamExtractionAdded, StreamChunkDone, StreamPassDone
+from sourcery.runtime import SourceryEngine
+
+engine = SourceryEngine()
+for event in engine.extract_stream(request):
+    if isinstance(event, StreamExtractionAdded):
+        print(f"New: {event.extraction.entity}='{event.extraction.text}'")
+    elif isinstance(event, StreamChunkDone):
+        print(f"Chunk {event.chunk_id} done ({event.candidates_found} candidates)")
+    elif isinstance(event, StreamPassDone):
+        print(f"Pass {event.pass_id} done (+{event.additions_this_pass})")
+
+# The generator returns ExtractResult through StopIteration.value if manually consumed.
+```
+
+## 12) Benchmark command
 
 ```
 uv run sourcery-benchmark \

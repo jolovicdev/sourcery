@@ -52,21 +52,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Guides</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build A Pipeline</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/build-a-pipeline/">Build a Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/code-examples/">Code Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/usage/">Usage</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime And Tuning</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/runtime-and-tuning/">Runtime and Tuning</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/ingestion/">Ingestion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs And Reviewer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/outputs-and-reviewer/">Outputs and Reviewer</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/benchmarking/">Benchmarking</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing And Validation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/testing-and-validation/">Testing and Validation</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Architecture</span></p>
@@ -124,8 +124,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="system-overview">System Overview<a class="headerlink" href="#system-overview" title="Permanent link">#</a></h1>
-<p>Sourcery is structured as replaceable black boxes around typed contracts.</p>
+                <h1 id="sourcery-system-overview">Sourcery System Overview<a class="headerlink" href="#sourcery-system-overview" title="Permanent link">#</a></h1>
+<p>Sourcery is structured as replaceable runtime and pipeline components around stable typed contracts.</p>
 <h2 id="primary-primitives">Primary Primitives<a class="headerlink" href="#primary-primitives" title="Permanent link">#</a></h2>
 <p>Defined in <code>sourcery/contracts/models.py</code>:</p>
 <ul>
@@ -160,6 +160,7 @@
 <li>Optionally reconcile canonical claims.</li>
 <li>Emit <code>ExtractResult</code> with metrics, warnings, and run trace.</li>
 </ol>
+<p>Sync, async, and streaming entry points share this lifecycle. Streaming emits chunk/pass progress events while preserving the same final result shape.</p>
 <h2 id="determinism-notes">Determinism Notes<a class="headerlink" href="#determinism-notes" title="Permanent link">#</a></h2>
 <p>Determinism is strongest in pipeline logic (<code>chunking</code>, <code>aligner</code>, <code>merger</code>).
 Runtime behavior may vary with provider/model behavior, but deterministic options plus strict examples reduce drift.</p>
@@ -167,7 +168,7 @@ Runtime behavior may vary with provider/model behavior, but deterministic option
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../../guides/testing-and-validation/" class="btn btn-neutral float-left" title="Testing And Validation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../guides/testing-and-validation/" class="btn btn-neutral float-left" title="Testing and Validation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../pipeline-internals/" class="btn btn-neutral float-right" title="Pipeline Internals">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
