@@ -169,3 +169,43 @@ def test_refactored_metrics_invariants(extract_request: ExtractRequest) -> None:
     assert len(result.run_trace.pass_ids) == result.metrics.passes_executed
     assert result.run_trace.run_id
     assert result.run_trace.model == extract_request.runtime.model
+
+
+def test_custom_dependencies_are_invoked(extract_request: ExtractRequest) -> None:
+    from tests.conftest import FakeRuntime
+    from sourcery.contracts import EngineDependencies
+    from sourcery.observability.trace import RunTraceCollector
+    from sourcery.pipeline import PromptCompiler, ExampleValidator, align_candidates, merge_non_overlapping, plan_chunks
+
+    planner_called: list[bool] = []
+    aligner_called: list[bool] = []
+    merger_called: list[bool] = []
+
+    def tracking_planner(*args, **kwargs):
+        planner_called.append(True)
+        return plan_chunks(*args, **kwargs)
+
+    def tracking_aligner(*args, **kwargs):
+        aligner_called.append(True)
+        return align_candidates(*args, **kwargs)
+
+    def tracking_merger(*args, **kwargs):
+        merger_called.append(True)
+        return merge_non_overlapping(*args, **kwargs)
+
+    deps = EngineDependencies(
+        runtime_factory=FakeRuntime,
+        prompt_compiler=PromptCompiler(),
+        example_validator=ExampleValidator(),
+        chunk_planner=tracking_planner,
+        aligner=tracking_aligner,
+        merger=tracking_merger,
+        trace_collector_factory=RunTraceCollector,
+    )
+
+    engine = SourceryEngine(dependencies=deps)
+    engine.extract(extract_request)
+
+    assert len(planner_called) > 0, "chunk_planner was never called"
+    assert len(aligner_called) > 0, "aligner was never called"
+    assert len(merger_called) > 0, "merger was never called"
