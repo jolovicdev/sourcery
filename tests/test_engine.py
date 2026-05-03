@@ -155,6 +155,62 @@ def test_async_reconciliation_uses_async_path(extract_request: ExtractRequest) -
     assert FakeReconciliationRuntime.areconcile_called is True
 
 
+def test_async_only_reconciliation_runtime_is_preserved(
+    extract_request: ExtractRequest,
+) -> None:
+    import asyncio
+    from collections.abc import Sequence
+
+    from tests.conftest import FakeRuntime
+    from sourcery.contracts import (
+        AlignedExtraction,
+        CanonicalClaim,
+        DocumentReconciliationReport,
+        SourceDocument,
+    )
+
+    class AsyncOnlyReconciliationRuntime(FakeRuntime):
+        areconcile_called = False
+
+        async def areconcile_document(
+            self,
+            *,
+            run_id: str,
+            document: SourceDocument,
+            extractions: Sequence[AlignedExtraction],
+            task_instructions: str,
+        ) -> DocumentReconciliationReport:
+            AsyncOnlyReconciliationRuntime.areconcile_called = True
+            reconciled = list(extractions[:1]) if extractions else []
+            claims: list[CanonicalClaim] = []
+            if reconciled:
+                claims.append(
+                    CanonicalClaim(
+                        claim_id=f"{document.document_id}:async-only:0",
+                        entity=reconciled[0].entity,
+                        canonical_text=reconciled[0].text,
+                        mention_count=1,
+                        extraction_indices=[0],
+                        confidence=reconciled[0].confidence,
+                        attributes={"source": "async-only-reconciler"},
+                    )
+                )
+            return DocumentReconciliationReport(
+                document_id=document.document_id,
+                reconciled_extractions=reconciled,
+                canonical_claims=claims,
+            )
+
+    extract_request.runtime.reconciliation.enabled = True
+
+    engine = SourceryEngine(runtime_factory=AsyncOnlyReconciliationRuntime)
+    result = asyncio.run(engine.aextract(extract_request))
+
+    assert AsyncOnlyReconciliationRuntime.areconcile_called is True
+    assert len(result.documents[0].extractions) == 1
+    assert result.documents[0].canonical_claims
+
+
 def test_refactored_metrics_invariants(extract_request: ExtractRequest) -> None:
     from tests.conftest import FakeRuntime
 

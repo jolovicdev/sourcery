@@ -55,6 +55,7 @@ class EngineRunState:
     documents: list[SourceDocument]
     runtime: ChunkRuntime
     reconciliation_runtime: DocumentReconciliationRuntime | None
+    async_reconciliation_runtime: AsyncDocumentReconciliationRuntime | None
     metrics: RunMetrics
     trace_collector: RunTraceCollector
     warnings: list[str]
@@ -139,8 +140,11 @@ class SourceryEngine:
 
         runtime = self._make_runtime(request)
         reconciliation_runtime: DocumentReconciliationRuntime | None = None
+        async_reconciliation_runtime: AsyncDocumentReconciliationRuntime | None = None
         if isinstance(runtime, DocumentReconciliationRuntime):
             reconciliation_runtime = runtime
+        if isinstance(runtime, AsyncDocumentReconciliationRuntime):
+            async_reconciliation_runtime = runtime
 
         metrics = RunMetrics(
             documents_total=len(documents),
@@ -153,6 +157,7 @@ class SourceryEngine:
             documents=documents,
             runtime=runtime,
             reconciliation_runtime=reconciliation_runtime,
+            async_reconciliation_runtime=async_reconciliation_runtime,
             metrics=metrics,
             trace_collector=trace_collector,
             warnings=warnings,
@@ -273,25 +278,28 @@ class SourceryEngine:
         for document in state.documents:
             extractions = state.document_extractions.get(document.document_id, [])
             canonical_claims = []
-            if state.reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
-                if isinstance(state.reconciliation_runtime, AsyncDocumentReconciliationRuntime):
-                    reconciliation = await state.reconciliation_runtime.areconcile_document(
+            if request.runtime.reconciliation.enabled:
+                if state.async_reconciliation_runtime is not None:
+                    reconciliation = await state.async_reconciliation_runtime.areconcile_document(
                         run_id=state.run_id,
                         document=document,
                         extractions=extractions,
                         task_instructions=request.task.instructions,
                     )
-                else:
+                elif state.reconciliation_runtime is not None:
                     reconciliation = state.reconciliation_runtime.reconcile_document(
                         run_id=state.run_id,
                         document=document,
                         extractions=extractions,
                         task_instructions=request.task.instructions,
                     )
-                extractions = reconciliation.reconciled_extractions
-                canonical_claims = reconciliation.canonical_claims
-                state.warnings.extend(reconciliation.warnings)
-                state.trace_collector.add_events(reconciliation.events)
+                else:
+                    reconciliation = None
+                if reconciliation is not None:
+                    extractions = reconciliation.reconciled_extractions
+                    canonical_claims = reconciliation.canonical_claims
+                    state.warnings.extend(reconciliation.warnings)
+                    state.trace_collector.add_events(reconciliation.events)
             documents_result.append(
                 DocumentResult(
                     document_id=document.document_id,
