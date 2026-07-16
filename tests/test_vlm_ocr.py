@@ -97,6 +97,7 @@ def test_blackgeorge_backend_creates_multimodal_job(tmp_path: Path) -> None:
         with mock.patch("blackgeorge.Desk") as mock_desk_class:
             mock_desk = mock_desk_class.return_value
             mock_report = mock.MagicMock()
+            mock_report.status = "completed"
             mock_report.content = "OCR extracted text"
             mock_desk.run.return_value = mock_report
 
@@ -116,6 +117,7 @@ def test_blackgeorge_backend_creates_multimodal_job(tmp_path: Path) -> None:
     assert job_input[0]["image_url"]["url"] == "data:image/png;base64,ZmFrZQ=="
     assert job_input[1]["type"] == "text"
     mock_desk.run.assert_called_once_with(mock_worker_instance, mock_job_instance)
+    mock_desk.close.assert_called_once_with()
 
 
 def test_blackgeorge_backend_uses_custom_prompt(tmp_path: Path) -> None:
@@ -127,6 +129,7 @@ def test_blackgeorge_backend_uses_custom_prompt(tmp_path: Path) -> None:
         with mock.patch("blackgeorge.Desk") as mock_desk_class:
             mock_desk = mock_desk_class.return_value
             mock_report = mock.MagicMock()
+            mock_report.status = "completed"
             mock_report.content = "text"
             mock_desk.run.return_value = mock_report
 
@@ -150,6 +153,7 @@ def test_blackgeorge_backend_empty_content_raises(tmp_path: Path) -> None:
         with mock.patch("blackgeorge.Desk") as mock_desk_class:
             mock_desk = mock_desk_class.return_value
             mock_report = mock.MagicMock()
+            mock_report.status = "completed"
             mock_report.content = None
             mock_report.data = None
             mock_report.errors = ["API error"]
@@ -159,3 +163,25 @@ def test_blackgeorge_backend_empty_content_raises(tmp_path: Path) -> None:
                 backend = BlackGeorgeVLMOCRBackend(config)
                 with pytest.raises(SourceryIngestionError, match="empty text"):
                     backend.extract_text(image_path=image)
+            mock_desk.close.assert_called_once_with()
+
+
+def test_blackgeorge_backend_failed_report_raises_and_closes(tmp_path: Path) -> None:
+    image = tmp_path / "scan.png"
+    image.write_bytes(b"\x89PNG")
+    config = RuntimeConfig(model="gemini/gemini-2.5-flash")
+
+    with mock.patch("blackgeorge.encode_file", return_value="data:image/png;base64,QQ=="):
+        with mock.patch("blackgeorge.Desk") as mock_desk_class:
+            mock_desk = mock_desk_class.return_value
+            mock_report = mock.MagicMock()
+            mock_report.status = "failed"
+            mock_report.errors = ["provider failed"]
+            mock_desk.run.return_value = mock_report
+
+            with mock.patch("blackgeorge.Worker"), mock.patch("blackgeorge.Job"):
+                backend = BlackGeorgeVLMOCRBackend(config)
+                with pytest.raises(SourceryIngestionError, match="provider failed"):
+                    backend.extract_text(image_path=image)
+
+            mock_desk.close.assert_called_once_with()

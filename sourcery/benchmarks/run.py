@@ -338,7 +338,7 @@ def _run_langextract(
     elapsed = time.perf_counter() - started
     docs = extraction if isinstance(extraction, list) else [extraction]
     entities: list[str] = []
-    grounded = 0
+    grounded_entities: list[str] = []
     for doc in docs:
         for item in doc.extractions:
             if not item.extraction_text:
@@ -346,8 +346,9 @@ def _run_langextract(
             entities.append(item.extraction_text)
             interval = item.char_interval
             if interval and interval.start_pos is not None and interval.end_pos is not None:
-                grounded += 1
-    unique_grounded = sorted(set(entities))
+                grounded_entities.append(item.extraction_text)
+    grounded = len(grounded_entities)
+    unique_grounded = sorted(set(grounded_entities))
     unresolved = max(len(entities) - grounded, 0)
     return BenchmarkRecord(
         framework="langextract",
@@ -439,7 +440,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=700)
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--retry-delay-seconds", type=float, default=2.0)
-    parser.add_argument("--sourcery-model", default="deepseek/deepseek-chat")
+    parser.add_argument("--sourcery-model", default="deepseek/deepseek-v4-flash")
     parser.add_argument("--langextract-model", default=None)
     parser.add_argument("--deepseek-base-url", default=None)
     parser.add_argument("--openrouter-base-url", default=None)

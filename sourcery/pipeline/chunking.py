@@ -119,6 +119,13 @@ def plan_chunks(
     max_chunk_chars: int,
     context_window_chars: int,
 ) -> list[TextChunk]:
+    if pass_id < 1:
+        raise ValueError("pass_id must be >= 1")
+    if max_chunk_chars < 1:
+        raise ValueError("max_chunk_chars must be >= 1")
+    if context_window_chars < 0:
+        raise ValueError("context_window_chars must be >= 0")
+
     chunks: list[TextChunk] = []
     for document in documents:
         text = document.text
@@ -128,9 +135,11 @@ def plan_chunks(
         previous_text = ""
         for order_index, (char_start, char_end) in enumerate(char_ranges):
             token_start, token_end = _token_bounds_for_char_range(tokens, char_start, char_end)
-            previous_context = None
+            context_parts: list[str] = []
+            if document.additional_context:
+                context_parts.append(f"Document context:\n{document.additional_context}")
             if context_window_chars > 0 and previous_text:
-                previous_context = previous_text[-context_window_chars:]
+                context_parts.append(f"Previous chunk:\n{previous_text[-context_window_chars:]}")
             chunk = TextChunk(
                 chunk_id=f"{document.document_id}:p{pass_id}:c{order_index}",
                 document_id=document.document_id,
@@ -141,7 +150,7 @@ def plan_chunks(
                 char_end=char_end,
                 token_start=token_start,
                 token_end=token_end,
-                previous_context=previous_context,
+                previous_context="\n\n".join(context_parts) or None,
             )
             chunks.append(chunk)
             previous_text = chunk.text

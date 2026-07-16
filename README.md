@@ -1,90 +1,38 @@
-# Sourcery: Schema-First LLM Document Extraction for Python
+# SourceryForge: Source-Grounded LLM Document Extraction for Python
 
-Sourcery is a **Python LLM extraction framework** for turning unstructured text, PDFs, HTML, URLs, and VLM OCR image sources into typed, source-grounded Pydantic data.
+**SourceryForge** is an open-source Python framework for extracting structured data from
+unstructured text, PDFs, HTML pages, URLs, and OCR-processed images with large language models.
+The PyPI distribution is `sourceryforge`; the Python import is `sourcery`.
 
-Define your extraction schema with Pydantic, run chunked model extraction, align every result back to source spans, optionally reconcile mentions into canonical claims, and export JSONL or HTML review workflows.
+Define extraction schemas with Pydantic and receive typed entities with exact source spans.
+Sourcery handles deterministic chunking, multi-pass extraction, cross-chunk refinement, mention
+reconciliation, JSONL export, HTML review, and stored-run replay.
 
-## What Is Sourcery
+## Why use Sourcery for LLM document extraction?
 
-Sourcery is for people building:
+- **Typed structured output:** Define entity attributes with Pydantic models.
+- **Source-grounded results:** Every resolved extraction includes exact character offsets.
+- **Long-document processing:** Split large sources into deterministic chunks with context.
+- **Entity reconciliation:** Combine repeated mentions into canonical claims.
+- **Reviewable output:** Export JSONL or generate interactive HTML review pages.
+- **Runtime diagnostics:** Inspect typed errors, event traces, retry attempts, and stored runs.
+- **Async and streaming APIs:** Run native async extraction or consume chunk-level progress events.
 
-- document AI pipelines,
-- compliance and legal extraction systems,
-- financial filing intelligence,
-- contract and policy analyzers,
-- review workflows with human approval.
+## Install SourceryForge
 
-Core idea:
-
-1. Define extraction contracts in **Pydantic v2**.
-2. Run deterministic chunked extraction with LLM structured output.
-3. Align results to source offsets.
-4. Reconcile at document-level into canonical claims.
-5. Review/export via JSONL + HTML reviewer.
-
-## Why Sourcery
-
-Sourcery is optimized for **type safety + runtime reliability + deterministic post-processing**.
-
-- Pydantic contracts are first-class (`EntitySpec.attributes_model`).
-- BlackGeorge-native runtime orchestration (no custom provider router stack).
-- Deterministic alignment statuses (`exact`, `fuzzy`, `partial`, `unresolved`).
-- Deterministic merge behavior across passes.
-- Typed error taxonomy for provider/runtime/pipeline/ingestion failures.
-- Run replay via BlackGeorge run store.
-- Built-in reviewer UI (search/filter/approve/export).
-- Document-level reconciliation support with BlackGeorge Workforce + Blackboard + resolver worker.
-
-## BlackGeorge Relationship
-
-Sourcery is an application layer **on top of** [**BlackGeorge**](https://github.com/jolovicdev/blackgeorge) runtime primitives (`Desk`, `Flow`, `Worker`, `Workforce`, `RunStore`, `EventBus`).
-
-- Sourcery handles extraction domain logic.
-- BlackGeorge handles model execution, workflow orchestration, events, pause/resume, and run storage.
-
-This means BlackGeorge is a hard runtime dependency in this project.
-
-## Features
-
-- Schema-first extraction with Pydantic models.
-- Ingestion adapters: text, file, PDF, HTML, URL, VLM-based image OCR.
-- Deterministic chunking and alignment.
-- Multi-pass extraction with stop-when-no-new-results.
-- Cross-chunk refinement and document-level reconciliation.
-- Session-based refinement mode.
-- Reviewer HTML UI + export to JSONL/CSV.
-- Real async extraction (native async/await, no thread pools).
-- Streaming extraction — yields results per chunk as they land.
-- Run tracing and replay.
-
-## Install
-
-```bash
-uv sync --extra dev --extra ingest
-```
-
-PyPI distribution name: `sourceryforge`  
-Python import path: `sourcery`
-
-Install from PyPI:
-
-```bash
-pip install sourceryforge
-```
-
-Or with uv:
+Sourcery requires Python 3.12 or newer.
 
 ```bash
 uv add sourceryforge
 ```
 
-If you want benchmark tooling:
+Install PDF ingestion support:
 
 ```bash
-uv sync --extra benchmark
+uv add "sourceryforge[ingest]"
 ```
 
-Set your provider key (example):
+Set the credential required by your selected model provider. For DeepSeek:
 
 ```bash
 export DEEPSEEK_API_KEY="..."
@@ -92,44 +40,13 @@ export DEEPSEEK_API_KEY="..."
 
 Set `RuntimeConfig.model` to a provider/model route supported by your BlackGeorge runtime setup.
 
-## Reproducible Benchmark
-
-Run the benchmark from this repo root:
-
-```bash
-uv run sourcery-benchmark --text-types english,japanese,french,spanish --max-chars 4500 --max-passes 2 --sourcery-model deepseek/deepseek-chat
-```
-
-Run it from any directory:
-
-```bash
-uv run --project /path/to/sourcery sourcery-benchmark --text-types english
-```
-Or run the compatibility wrapper:
-
-```bash
-uv run benchmark_compare.py --text-types english
-```
-
-Output JSON is written to `benchmark_results/` and includes:
-
-- run settings,
-- tokenization throughput table,
-- per-language extraction metrics,
-- aggregate framework summaries.
-
-### Benchmark Port Scope
-
-The benchmark runner compares Sourcery with LangExtract using a similar Gutenberg sampling flow. It is not a byte-for-byte clone of LangExtract's benchmark script.
-
-- Ported: Gutenberg text sampling flow, per-language extraction runs, retry behavior, timing, grounded/unresolved metrics, JSON output artifacts.
-
-## Quickstart
+## Extract structured data with Python
 
 ```python
 from pydantic import BaseModel
+
 import sourcery
-from sourcery.contracts import (
+from sourcery import (
     EntitySchemaSet,
     EntitySpec,
     ExtractRequest,
@@ -139,71 +56,241 @@ from sourcery.contracts import (
     RuntimeConfig,
 )
 
-class PersonAttrs(BaseModel):
+
+class PersonAttributes(BaseModel):
     role: str | None = None
 
+
+text = "Alice Johnson is the CEO of Acme Robotics."
+
 request = ExtractRequest(
-    documents="Alice is the CEO of Acme.",
+    documents=text,
     task=ExtractionTask(
-        instructions="Extract people.",
+        instructions="Extract every named person and their role.",
         schema=EntitySchemaSet(
-            entities=[EntitySpec(name="person", attributes_model=PersonAttrs)]
+            entities=[
+                EntitySpec(
+                    name="person",
+                    attributes_model=PersonAttributes,
+                )
+            ]
         ),
         examples=[
             ExtractionExample(
-                text="Bob is the CTO.",
+                text="Bob Chen is the CTO.",
                 extractions=[
-                    ExampleExtraction(entity="person", text="Bob", attributes={"role": "CTO"})
+                    ExampleExtraction(
+                        entity="person",
+                        text="Bob Chen",
+                        attributes={"role": "CTO"},
+                    )
                 ],
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(
+        model="deepseek/deepseek-v4-flash",
+        temperature=0.0,
+    ),
 )
 
 result = sourcery.extract(request)
-print(result.metrics.model_dump(mode="json"))
+extraction = result.documents[0].extractions[0]
+
+assert isinstance(extraction.attributes, PersonAttributes)
+assert text[extraction.char_start : extraction.char_end] == extraction.text
+
+print(extraction.text)
+print(extraction.attributes.role)
+print(extraction.char_start, extraction.char_end)
 ```
 
-More examples: `CODE_EXAMPLES.md`
-Full usage and API guide: `USAGE.md`
-Notebook workflows: `examples/notebooks/sourcery_quickstart.ipynb`, `examples/notebooks/sourcery_pdf_workflow.ipynb`
+## How Sourcery extracts information from documents
 
-## Project Structure
+1. Validate the extraction task, Pydantic entity schemas, and few-shot examples.
+2. Split each document into deterministic text chunks with source offsets and optional context.
+3. Ask the configured LLM for structured candidates that match the entity schemas.
+4. Align every candidate to an exact, fuzzy, partial, or unresolved source span.
+5. Merge overlapping results across chunks and extraction passes.
+6. Optionally reconcile repeated mentions into canonical claims.
+7. Return typed documents, metrics, warnings, provenance, and runtime events.
 
-- `sourcery/contracts`: public types and contracts.
-- `sourcery/pipeline`: chunking, prompt compiler, aligner, merger.
-- `sourcery/runtime`: engine + BlackGeorge runtime integration.
-- `sourcery/ingest`: document loaders and adapters.
-- `sourcery/io`: JSONL, visualization, reviewer UI.
-- `sourcery/observability`: run trace collection.
+Sourcery owns the deterministic extraction pipeline. Model output is never presented as grounded
+unless it can be aligned back to the source text.
 
-## Validation
+## Extract from PDFs, HTML, URLs, and images
+
+The source loaders accept:
+
+- inline text,
+- plain-text and HTML files,
+- PDF documents through `pypdf`,
+- web URLs,
+- raw HTML,
+- image files through a configurable vision-language OCR backend.
+
+Use `sourcery.extract_from_sources(...)` when you want loading and extraction in one call. PDF
+loading is text-extraction first. Scanned documents can use the VLM OCR interface before entering
+the normal typed extraction pipeline.
+
+## Source-grounded Pydantic output
+
+Each aligned extraction can include:
+
+- the entity type and extracted text,
+- typed Pydantic attributes,
+- character and token offsets,
+- alignment status and confidence,
+- model, worker, chunk, pass, and run provenance.
+
+Each document can also contain canonical claims produced by document-level reconciliation. The
+full result includes run metrics, warnings, chunk identifiers, and normalized runtime events.
+
+Persist or inspect results with:
+
+- `save_extract_result_jsonl(...)` for machine-readable JSONL,
+- `write_document_html(...)` for source-span visualization,
+- `write_reviewer_html(...)` for approve, reject, search, filter, JSONL, and CSV workflows.
+
+## Long documents, async extraction, and streaming
+
+Sourcery supports deterministic multi-pass extraction, configurable chunk sizes, previous-chunk
+context, and bounded batch concurrency.
+
+- `sourcery.extract(...)` runs the synchronous API.
+- `sourcery.aextract(...)` runs native async extraction.
+- `SourceryEngine.extract_stream(...)` yields extraction, chunk, and pass events.
+- `SourceryEngine.replay_run(...)` reads stored BlackGeorge run data and events.
+
+Chunks run in bounded concurrent batches. Events are emitted in deterministic chunk order after
+each batch finishes. This is progress streaming, not token streaming.
+
+## Compare Sourcery with LangExtract
+
+The included benchmark compares Sourcery and LangExtract on Gutenberg text samples. It records
+elapsed time, grounded extractions, unresolved extractions, and unique grounded entities for each
+framework.
+
+Install the benchmark dependencies from the repository root:
 
 ```bash
+uv sync --extra benchmark
+```
+
+Run the multilingual benchmark:
+
+```bash
+uv run sourcery-benchmark \
+  --text-types english,japanese,french,spanish \
+  --max-chars 4500 \
+  --max-passes 2 \
+  --sourcery-model deepseek/deepseek-v4-flash
+```
+
+The compatibility wrapper runs the same CLI entry point:
+
+```bash
+uv run benchmark_compare.py --text-types english
+```
+
+Reports are written to `benchmark_results/`. The benchmark follows a similar Gutenberg sampling
+flow to LangExtract's benchmark, but it is not a byte-for-byte port.
+
+## Runtime architecture: Sourcery and BlackGeorge
+
+Sourcery is an application layer on top of
+[BlackGeorge](https://github.com/jolovicdev/blackgeorge) runtime primitives such as `Desk`, `Flow`,
+`Worker`, `Workforce`, `RunStore`, and `EventBus`.
+
+- Sourcery handles schemas, prompts, chunking, alignment, merging, reconciliation, and outputs.
+- BlackGeorge handles model execution, orchestration, events, pause and resume, and run storage.
+
+BlackGeorge is a required runtime dependency. Sourcery does not maintain a separate provider router
+or orchestration engine.
+
+## LLM document extraction use cases
+
+- Regulatory compliance reports and policy updates.
+- SEC filings, annual reports, and earnings-call transcripts.
+- Contract clauses, obligations, dates, and renewal terms.
+- Clinical trial protocols, treatment arms, endpoints, and adverse events.
+- Cyber threat reports, indicators, malware families, and CVEs.
+- Industrial maintenance logs, fault codes, parts, and repair actions.
+- Public meeting minutes, motions, votes, and action items.
+- Freight documents, cargo descriptions, ports, and container identifiers.
+- Property inspection reports, defects, severity, and recommended repairs.
+- Grant and RFP eligibility rules, deadlines, deliverables, and scoring criteria.
+
+## Documentation and examples
+
+- [Installation and provider setup](docs/getting-started/installation.md)
+- [Five-minute extraction quickstart](docs/getting-started/quickstart.md)
+- [Complete usage guide](USAGE.md)
+- [Runnable Python examples](CODE_EXAMPLES.md)
+- [Public API reference](docs/reference/public-api.md)
+- [Runtime configuration and tuning](docs/guides/runtime-and-tuning.md)
+- [Outputs and reviewer guide](docs/guides/outputs-and-reviewer.md)
+- [Quickstart notebook](examples/notebooks/sourcery_quickstart.ipynb)
+- [PDF workflow notebook](examples/notebooks/sourcery_pdf_workflow.ipynb)
+- [Published documentation site](https://jolovicdev.github.io/sourcery/)
+
+## Project layout
+
+- `sourcery/contracts`: public request, runtime, and result contracts.
+- `sourcery/pipeline`: prompt compilation, chunking, alignment, and merging.
+- `sourcery/runtime`: extraction engine and BlackGeorge integration.
+- `sourcery/ingest`: text, file, PDF, HTML, URL, and VLM OCR loaders.
+- `sourcery/io`: JSONL persistence, visualization, and reviewer UI.
+- `sourcery/observability`: normalized run trace collection.
+- `sourcery/benchmarks`: Sourcery and LangExtract benchmark runner.
+
+## Development and validation
+
+Install the common development extras:
+
+```bash
+uv sync --extra dev --extra ingest --extra docs --extra benchmark
+```
+
+Run the release checks:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy .
 uv run --extra dev pytest -q
-uv run --extra dev ruff check sourcery tests
-uv run --extra dev mypy sourcery
-```
-
-## Documentation Site
-
-Build and serve project docs with MkDocs:
-
-```bash
-uv run --extra docs mkdocs serve
 uv run --extra docs mkdocs build --strict
 ```
 
-## Common Use Cases
+## Capabilities and limits
 
-- Regulatory compliance extraction.
-- SEC filing and earnings-call intelligence.
-- Contract clause extraction and renewal tracking.
-- Policy change monitoring.
-- Research paper benchmark extraction.
-- Incident/postmortem structure mining.
+### PDF and scanned-document extraction
+
+The ingestion extra uses `pypdf` for text-based PDFs. Scanned pages require a vision-language OCR
+backend before they enter the normal extraction pipeline.
+
+### Typed Pydantic results
+
+Each `EntitySpec` references a Pydantic attribute model. Validated attributes retain their concrete
+model fields in direct and nested result serialization.
+
+### Source grounding
+
+Every candidate is checked against its source chunk. Returned extractions carry one of four
+alignment statuses: `exact`, `fuzzy`, `partial`, or `unresolved`. Resolved extractions also receive
+source character offsets.
+
+### Model providers
+
+Set `RuntimeConfig.model` to a provider/model route supported by BlackGeorge and provide the matching
+credential through environment variables. Sourcery passes model execution to the BlackGeorge
+runtime.
+
+### Async and streaming extraction
+
+Use `sourcery.aextract(...)` for native async extraction and `SourceryEngine.extract_stream(...)`
+for chunk-level progress events. Streaming reports chunk progress, not model tokens.
 
 ## License
 
-Licensed under the MIT License. See `LICENSE`.
+SourceryForge is licensed under the MIT License. See [LICENSE](LICENSE).

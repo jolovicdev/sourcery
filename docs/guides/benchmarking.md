@@ -31,7 +31,7 @@ uv run sourcery-benchmark \
   --text-types english,japanese \
   --max-chars 4500 \
   --max-passes 2 \
-  --sourcery-model deepseek/deepseek-chat
+  --sourcery-model deepseek/deepseek-v4-flash
 ```
 
 ## Important Flags

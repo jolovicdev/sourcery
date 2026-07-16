@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterator
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
+
+from pydantic import BaseModel
 
 from sourcery.contracts import DocumentResult, ExtractResult
 
@@ -51,11 +53,17 @@ def save_extract_result_jsonl(result: ExtractResult, path: str | Path) -> None:
 def iter_document_rows(path: str | Path) -> Iterator[dict[str, Any]]:
     file_path = Path(path)
     with file_path.open("r", encoding="utf-8") as handle:
-        for line in handle:
+        for line_number, line in enumerate(handle, 1):
             stripped = line.strip()
             if not stripped:
                 continue
-            yield json.loads(stripped)
+            try:
+                row = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Invalid JSONL at {file_path}:{line_number}: {exc.msg}") from exc
+            if not isinstance(row, dict):
+                raise ValueError(f"JSONL row at {file_path}:{line_number} must be an object")
+            yield row
 
 
 def load_document_results_jsonl(path: str | Path) -> list[DocumentResult]:
@@ -66,11 +74,6 @@ def load_document_results_jsonl(path: str | Path) -> list[DocumentResult]:
 
 
 def _dump_attributes(value: Any) -> dict[str, Any]:
-    if hasattr(value, "model_dump"):
-        try:
-            dumped = value.model_dump(mode="json")
-            if isinstance(dumped, dict):
-                return cast(dict[str, Any], dumped)
-        except Exception:
-            pass
-    return cast(dict[str, Any], dict(value))
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json")
+    return dict(value)

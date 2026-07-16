@@ -4,20 +4,21 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sourceryforge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Schema-first LLM extraction framework with entity grounding and deterministic post-processing"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
-repository = "https://github.com/jolovicdev/sourcery"
 keywords = ["llm", "extraction", "entity-extraction", "document-ai", "pydantic", "langchain-alternative", "schema-first", "nlp"]
 authors = [{ name = "Dušan Jolović" }]
 
 dependencies = [
   "pydantic>=2.7.0",
-  "blackgeorge==1.2.4",
-  "pytest>=9.0.2",
+  "blackgeorge==1.3.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/jolovicdev/sourcery"
 
 [project.scripts]
 sourcery-benchmark = "sourcery.benchmarks.run:main"

@@ -9,12 +9,14 @@ from typing import cast
 from sourcery.benchmarks.config import GUTENBERG_TEXTS, TextType
 
 
-def download_text(url: str) -> str:
+def download_text(url: str, *, timeout_seconds: int = 30) -> str:
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be greater than zero")
     try:
-        with urllib.request.urlopen(url) as response:
+        with urllib.request.urlopen(url, timeout=timeout_seconds) as response:
             payload = cast(bytes, response.read())
             return payload.decode("utf-8")
-    except (urllib.error.URLError, urllib.error.HTTPError) as exc:
+    except (UnicodeDecodeError, urllib.error.URLError) as exc:
         raise RuntimeError(f"Could not download from {url}: {exc}") from exc
 
 
@@ -24,7 +26,7 @@ def extract_main_content(full_text: str) -> str:
     upper = full_text.upper()
     start_index = upper.find(start_marker)
     end_index = upper.find(end_marker)
-    if start_index != -1 and end_index != -1:
+    if 0 <= start_index < end_index:
         content_start = full_text.find("\n", start_index) + 1
         line_end = full_text.find("***", start_index + 3)
         if line_end != -1 and line_end < content_start + 100:

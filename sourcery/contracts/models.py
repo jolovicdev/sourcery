@@ -5,7 +5,7 @@ import json
 import uuid
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SerializeAsAny, field_validator, model_validator
 
 AlignmentStatus = Literal["exact", "fuzzy", "partial", "unresolved"]
 
@@ -20,10 +20,6 @@ def new_document_id() -> str:
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def ensure_sequence(value: Any) -> Any:
-    return value
 
 
 class SourceDocument(BaseModel):
@@ -41,6 +37,14 @@ class SourceDocument(BaseModel):
             raise ValueError("Document text must not be empty")
         return value
 
+    @field_validator("document_id")
+    @classmethod
+    def validate_document_id(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Document id must not be empty")
+        return value
+
 
 class TextChunk(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -56,6 +60,14 @@ class TextChunk(BaseModel):
     token_end: int | None = None
     previous_context: str | None = None
 
+    @field_validator("chunk_id", "document_id")
+    @classmethod
+    def validate_ids(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Chunk ids must not be empty")
+        return value
+
     @model_validator(mode="after")
     def validate_ranges(self) -> TextChunk:
         if self.char_start < 0 or self.char_end < 0:
@@ -68,6 +80,13 @@ class TextChunk(BaseModel):
             raise ValueError("Chunk order_index must be >= 0")
         if not self.text:
             raise ValueError("Chunk text must not be empty")
+        if self.char_end - self.char_start != len(self.text):
+            raise ValueError("Chunk char range must match chunk text length")
+        if (self.token_start is None) != (self.token_end is None):
+            raise ValueError("Chunk token offsets must both be set or both be omitted")
+        if self.token_start is not None and self.token_end is not None:
+            if self.token_start < 0 or self.token_end <= self.token_start:
+                raise ValueError("Chunk token range must be non-empty and non-negative")
         return self
 
 
@@ -78,12 +97,27 @@ class ExampleExtraction(BaseModel):
     text: str
     attributes: dict[str, Any] = Field(default_factory=dict)
 
+    @field_validator("entity", "text")
+    @classmethod
+    def validate_non_empty_strings(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Example entity and text must not be empty")
+        return value
+
 
 class ExtractionExample(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     text: str
     extractions: list[ExampleExtraction] = Field(default_factory=list)
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Example text must not be empty")
+        return value
 
 
 class EntitySpec(BaseModel):
@@ -137,7 +171,8 @@ class ExtractionTask(BaseModel):
     @field_validator("instructions")
     @classmethod
     def validate_instructions_not_empty(cls, value: str) -> str:
-        if not value.strip():
+        value = value.strip()
+        if not value:
             raise ValueError("Task instructions must not be empty")
         return value
 
@@ -240,8 +275,8 @@ class RuntimeConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     model: str
-    temperature: float = 0.0
-    max_tokens: int | None = None
+    temperature: float = Field(default=0.0, ge=0.0)
+    max_tokens: int | None = Field(default=None, ge=1)
     stream: bool = False
     storage_dir: str = ".sourcery"
     respect_context_window: bool = True
@@ -252,8 +287,17 @@ class RuntimeConfig(BaseModel):
     @field_validator("model")
     @classmethod
     def validate_model(cls, value: str) -> str:
-        if not value.strip():
+        value = value.strip()
+        if not value:
             raise ValueError("runtime.model must not be empty")
+        return value
+
+    @field_validator("storage_dir")
+    @classmethod
+    def validate_storage_dir(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("runtime.storage_dir must not be empty")
         return value
 
 
@@ -262,8 +306,16 @@ class ExtractionCandidate(BaseModel):
 
     entity: str
     text: str
-    attributes: dict[str, Any] | BaseModel
-    confidence: float | None = None
+    attributes: dict[str, Any] | SerializeAsAny[BaseModel]
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+
+    @field_validator("entity", "text")
+    @classmethod
+    def validate_non_empty_strings(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Extraction entity and text must not be empty")
+        return value
 
 
 class ExtractionProvenance(BaseModel):
@@ -277,20 +329,43 @@ class ExtractionProvenance(BaseModel):
     step_name: str | None = None
     raw_run_id: str | None = None
 
+    @field_validator("run_id", "chunk_id", "worker_name", "model")
+    @classmethod
+    def validate_required_strings(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Extraction provenance fields must not be empty")
+        return value
+
+    @field_validator("pass_id")
+    @classmethod
+    def validate_pass_id(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("Extraction provenance pass_id must be >= 1")
+        return value
+
 
 class AlignedExtraction(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     entity: str
     text: str
-    attributes: dict[str, Any] | BaseModel
+    attributes: dict[str, Any] | SerializeAsAny[BaseModel]
     char_start: int
     char_end: int
     token_start: int | None = None
     token_end: int | None = None
     alignment_status: AlignmentStatus
-    confidence: float | None = None
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     provenance: ExtractionProvenance
+
+    @field_validator("entity", "text")
+    @classmethod
+    def validate_required_strings(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Aligned extraction entity and text must not be empty")
+        return value
 
     @model_validator(mode="after")
     def validate_alignment(self) -> AlignedExtraction:
@@ -303,9 +378,13 @@ class AlignedExtraction(BaseModel):
         if (
             self.token_start is not None
             and self.token_end is not None
-            and self.token_start > self.token_end
+            and self.token_start >= self.token_end
         ):
-            raise ValueError("token_start must be <= token_end")
+            raise ValueError("Extraction token range must be non-empty")
+        if (self.token_start is None) != (self.token_end is None):
+            raise ValueError("Extraction token offsets must both be set or both be omitted")
+        if self.token_start is not None and self.token_start < 0:
+            raise ValueError("Extraction token offsets must be non-negative")
         return self
 
 
@@ -317,7 +396,7 @@ class CanonicalClaim(BaseModel):
     canonical_text: str
     mention_count: int
     extraction_indices: list[int] = Field(default_factory=list)
-    confidence: float | None = None
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     attributes: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -330,6 +409,12 @@ class CanonicalClaim(BaseModel):
             raise ValueError("Canonical claim text must not be empty")
         if self.mention_count < 1:
             raise ValueError("Canonical claim mention_count must be >= 1")
+        if any(index < 0 for index in self.extraction_indices):
+            raise ValueError("Canonical claim extraction indices must be non-negative")
+        if len(set(self.extraction_indices)) != len(self.extraction_indices):
+            raise ValueError("Canonical claim extraction indices must be unique")
+        if self.mention_count != len(self.extraction_indices):
+            raise ValueError("Canonical claim mention_count must match extraction indices")
         return self
 
 
@@ -340,6 +425,15 @@ class DocumentResult(BaseModel):
     text: str
     extractions: list[AlignedExtraction] = Field(default_factory=list)
     canonical_claims: list[CanonicalClaim] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_extraction_bounds(self) -> DocumentResult:
+        if not self.document_id.strip():
+            raise ValueError("Document result id must not be empty")
+        for extraction in self.extractions:
+            if extraction.alignment_status != "unresolved" and extraction.char_end > len(self.text):
+                raise ValueError("Resolved extraction exceeds document text")
+        return self
 
 
 class RunMetrics(BaseModel):
@@ -417,6 +511,19 @@ class ExtractRequest(BaseModel):
     task: ExtractionTask
     options: ExtractOptions = Field(default_factory=ExtractOptions)
     runtime: RuntimeConfig
+
+    @model_validator(mode="after")
+    def validate_documents(self) -> ExtractRequest:
+        if isinstance(self.documents, str):
+            if not self.documents.strip():
+                raise ValueError("Request document text must not be empty")
+            return self
+        if not self.documents:
+            raise ValueError("At least one source document is required")
+        document_ids = [document.document_id for document in self.documents]
+        if len(set(document_ids)) != len(document_ids):
+            raise ValueError("Source document ids must be unique within a request")
+        return self
 
     def normalize_documents(self) -> list[SourceDocument]:
         if isinstance(self.documents, str):

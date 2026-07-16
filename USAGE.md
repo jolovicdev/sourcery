@@ -151,6 +151,11 @@ Document-level reconciliation (optional):
 - `stop_when_no_new_extractions=True`
 - `allow_unresolved=False`
 
+With `accept_partial_exact=True`, partial alignment requires a contiguous match of at least two
+word tokens covering more than half of the candidate's word tokens. Unresolved results with the
+same entity and text are deduplicated across passes even when their attributes differ. The normal
+merge priority retains the earlier pass, then the higher-confidence result within the same pass.
+
 ## Minimal Example (Inline Text)
 
 ```python
@@ -185,7 +190,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -204,7 +209,7 @@ Use the source-based helper:
 result = sourcery.extract_from_sources(
     ["1706.03762v7.pdf", "https://example.com/article.html"],
     task=task,
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 ```
 
@@ -232,7 +237,9 @@ result = await sourcery.aextract(request)
 
 ## Streaming Extraction
 
-`extract_stream(...)` yields chunk-level Sourcery events as extraction work completes. It is result/progress streaming, not token streaming.
+`extract_stream(...)` processes up to `batch_concurrency` chunks concurrently. It emits each
+finished batch's extraction and chunk events in deterministic chunk order before starting the next
+batch. It is progress streaming, not completion-order or token streaming.
 
 ```python
 from sourcery.contracts import StreamChunkDone, StreamExtractionAdded, StreamPassDone
@@ -267,7 +274,7 @@ if raw_run_id:
 
 ```python
 runtime = RuntimeConfig(
-    model="deepseek/deepseek-chat",
+    model="deepseek/deepseek-v4-pro",
     session_refinement={"enabled": True, "max_turns": 1, "context_chars": 320},
     reconciliation={"enabled": True, "use_workforce": True, "max_claims": 100},
 )

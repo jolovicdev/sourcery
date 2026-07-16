@@ -4,8 +4,11 @@ import html
 import json
 from pathlib import Path
 from typing import Any, cast
+import zlib
 
-from sourcery.contracts import DocumentResult
+from pydantic import BaseModel
+
+from sourcery.contracts import AlignedExtraction, DocumentResult
 from sourcery.io.jsonl import load_document_results_jsonl
 
 try:
@@ -28,7 +31,7 @@ def _is_notebook() -> bool:
         return False
 
 
-def _color_for_entity(entity: str, index: int) -> str:
+def _color_for_entity(entity: str) -> str:
     palette = [
         "#d2f4ea",
         "#ffe5b4",
@@ -40,11 +43,10 @@ def _color_for_entity(entity: str, index: int) -> str:
         "#e7d8ff",
         "#d4f1f4",
     ]
-    seed = abs(hash(entity)) % len(palette)
-    return palette[(seed + index) % len(palette)]
+    return palette[zlib.crc32(entity.encode("utf-8")) % len(palette)]
 
 
-def _sorted_extractions(document: DocumentResult) -> list[Any]:
+def _sorted_extractions(document: DocumentResult) -> list[AlignedExtraction]:
     valid = [
         extraction
         for extraction in document.extractions
@@ -54,11 +56,11 @@ def _sorted_extractions(document: DocumentResult) -> list[Any]:
     return sorted(valid, key=lambda extraction: (extraction.char_start, extraction.char_end))
 
 
-def _highlighted_text(document: DocumentResult, extractions: list[Any]) -> str:
+def _highlighted_text(document: DocumentResult, extractions: list[AlignedExtraction]) -> str:
     text = document.text
     points: list[tuple[int, int, str]] = []
     for index, extraction in enumerate(extractions):
-        color = _color_for_entity(extraction.entity, index)
+        color = _color_for_entity(extraction.entity)
         points.append(
             (
                 extraction.char_start,
@@ -84,10 +86,10 @@ def _highlighted_text(document: DocumentResult, extractions: list[Any]) -> str:
     return "".join(result)
 
 
-def _legend(extractions: list[Any]) -> str:
+def _legend(extractions: list[AlignedExtraction]) -> str:
     by_entity: dict[str, str] = {}
     for index, extraction in enumerate(extractions):
-        by_entity.setdefault(extraction.entity, _color_for_entity(extraction.entity, index))
+        by_entity.setdefault(extraction.entity, _color_for_entity(extraction.entity))
 
     if not by_entity:
         return ""
@@ -99,15 +101,10 @@ def _legend(extractions: list[Any]) -> str:
     return "<div class='sx-legend'><strong>Legend:</strong> " + " ".join(tags) + "</div>"
 
 
-def _attr_dict(extraction: Any) -> dict[str, Any]:
+def _attr_dict(extraction: AlignedExtraction) -> dict[str, Any]:
     attrs = extraction.attributes
-    if hasattr(attrs, "model_dump"):
-        try:
-            dumped = attrs.model_dump(mode="json")
-            if isinstance(dumped, dict):
-                return dumped
-        except Exception:
-            pass
+    if isinstance(attrs, BaseModel):
+        return attrs.model_dump(mode="json")
     return dict(attrs)
 
 
@@ -139,7 +136,7 @@ def _interactive_html(
             }
         )
 
-    payload_json = json.dumps(payload, ensure_ascii=False)
+    payload_json = json.dumps(payload, ensure_ascii=False).replace("<", "\\u003c")
 
     return (
         "<style>"
@@ -161,10 +158,10 @@ def _interactive_html(
         "<div class='sx-wrapper'>"
         f"<div class='sx-panel'>{legend_html}"
         "<div class='sx-controls'>"
-        "<button class='sx-btn' onclick='sxPrev(this)'>Prev</button>"
-        "<button class='sx-btn' onclick='sxPlayPause(this)'>Play</button>"
-        "<button class='sx-btn' onclick='sxNext(this)'>Next</button>"
-        f"<input class='sx-slider' type='range' min='0' max='{max(len(payload) - 1, 0)}' value='0' oninput='sxJump(this)'/>"
+        "<button class='sx-btn' data-action='prev'>Prev</button>"
+        "<button class='sx-btn' data-action='play'>Play</button>"
+        "<button class='sx-btn' data-action='next'>Next</button>"
+        f"<input class='sx-slider' data-action='jump' type='range' min='0' max='{max(len(payload) - 1, 0)}' value='0'/>"
         "<span class='sx-meta' data-role='meta'></span>"
         "</div>"
         "<div class='sx-attrs' data-role='attrs'></div>"
@@ -196,13 +193,17 @@ def _interactive_html(
         "}"
         "function next(){idx=(idx+1)%data.length;render();}"
         "function prev(){idx=(idx-1+data.length)%data.length;render();}"
-        "window.sxNext=function(){next();};"
-        "window.sxPrev=function(){prev();};"
-        "window.sxJump=function(el){idx=Number(el.value||0);render();};"
-        "window.sxPlayPause=function(btn){"
+        "function sxNext(){next();}"
+        "function sxPrev(){prev();}"
+        "function sxJump(){idx=Number(slider.value||0);render();}"
+        "function sxPlayPause(){const btn=root.querySelector('[data-action=play]');"
         "if(!playing){timer=setInterval(next,speed);playing=true;btn.textContent='Pause';}"
         "else{clearInterval(timer);timer=null;playing=false;btn.textContent='Play';}"
-        "};"
+        "}"
+        "root.querySelector('[data-action=prev]').onclick=sxPrev;"
+        "root.querySelector('[data-action=play]').onclick=sxPlayPause;"
+        "root.querySelector('[data-action=next]').onclick=sxNext;"
+        "slider.oninput=sxJump;"
         "render();"
         "})();"
         "</script>"

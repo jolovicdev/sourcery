@@ -44,7 +44,7 @@ Core runtime model:
 - Type check: `uv run mypy .`
 - Serve docs: `uv run mkdocs serve`
 - Build docs: `uv run mkdocs build`
-- Run benchmark: `uv run sourcery-benchmark --text-types english,japanese,french,spanish --max-chars 4500 --max-passes 2 --sourcery-model deepseek/deepseek-chat`
+- Run benchmark: `uv run sourcery-benchmark --text-types english,japanese,french,spanish --max-chars 4500 --max-passes 2 --sourcery-model deepseek/deepseek-v4-flash`
 
 ## Code Style and Conventions
 - Keep all public/runtime code fully type-annotated.

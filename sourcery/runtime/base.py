@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
-from typing import Protocol
-from typing import runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from sourcery.contracts import (
     AlignedExtraction,
@@ -44,6 +42,11 @@ class RuntimeFactory(Protocol):
     def __call__(
         self, runtime_config: RuntimeConfig, schema_set: object, prompt_compiler: object
     ) -> ChunkRuntime: ...
+
+
+@runtime_checkable
+class ClosableRuntime(Protocol):
+    def close(self) -> None: ...
 
 
 @runtime_checkable

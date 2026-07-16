@@ -6,8 +6,8 @@ Run the full validation suite before merging changes.
 
 ```bash
 uv run --extra dev pytest -q
-uv run --extra dev ruff check sourcery tests
-uv run --extra dev mypy sourcery
+uv run ruff check .
+uv run mypy .
 ```
 
 ## Focused Test Runs

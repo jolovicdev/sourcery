@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from sourcery.contracts import ExampleValidationIssue, ExtractionTask
 from sourcery.exceptions import ExampleValidationError
-from sourcery.pipeline.aligner import _find_exact_span, _fuzzy_span
+from sourcery.pipeline.aligner import find_exact_span, find_fuzzy_span
 
 
 class ExampleValidator:
@@ -34,12 +34,11 @@ class ExampleValidator:
                     )
                     continue
 
-                exact = _find_exact_span(example.text, extraction.text)
-                exact = _find_exact_span(example.text, extraction.text)
+                exact = find_exact_span(example.text, extraction.text)
                 if exact is not None:
                     continue
 
-                fuzzy = _fuzzy_span(example.text, extraction.text, fuzzy_threshold)
+                fuzzy = find_fuzzy_span(example.text, extraction.text, fuzzy_threshold)
                 if fuzzy is not None:
                     issues.append(
                         ExampleValidationIssue(

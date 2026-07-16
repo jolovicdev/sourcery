@@ -43,7 +43,10 @@ All contracts are defined in `sourcery/contracts/models.py`.
 - `StreamChunkDone`
 - `StreamPassDone`
 
-Streaming events are emitted by `SourceryEngine.extract_stream(...)` as chunk results land. They report added extractions, completed chunks, and completed passes; the final `ExtractResult` is returned when the generator is exhausted.
+`SourceryEngine.extract_stream(...)` runs up to `batch_concurrency` chunks concurrently and emits
+each finished batch in deterministic chunk order. Events report added extractions, completed
+chunks, and completed passes; the final `ExtractResult` is returned when the generator is
+exhausted.
 
 ## Validation Guarantees
 

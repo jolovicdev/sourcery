@@ -11,6 +11,12 @@ def _overlaps(a: AlignedExtraction, b: AlignedExtraction) -> bool:
     return a.char_start < b.char_end and b.char_start < a.char_end
 
 
+def _same_unresolved(a: AlignedExtraction, b: AlignedExtraction) -> bool:
+    if a.alignment_status != "unresolved" or b.alignment_status != "unresolved":
+        return False
+    return a.entity == b.entity and a.text == b.text
+
+
 def _confidence_score(extraction: AlignedExtraction) -> float:
     if extraction.confidence is None:
         return -1.0
@@ -49,7 +55,9 @@ def merge_non_overlapping(
 
     for extraction in incoming:
         overlapping_indices = [
-            index for index, prior in enumerate(merged) if _overlaps(extraction, prior)
+            index
+            for index, prior in enumerate(merged)
+            if _overlaps(extraction, prior) or _same_unresolved(extraction, prior)
         ]
         if not overlapping_indices:
             merged.append(extraction)

@@ -11,7 +11,7 @@ on:
       dry_run:
         description: "Skip actual PyPI publish"
         required: false
-        default: "false"
+        default: "true"
         type: choice
         options:
           - "true"
@@ -59,6 +59,13 @@ jobs:
             echo "Error: Tag must be on master branch"
             exit 1
           }
+      - name: Manual publish branch protection
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
+            echo "Error: Live manual publish must run from master"
+            exit 1
+          fi
 
   publish:
     needs: validate

@@ -48,3 +48,16 @@ def test_load_source_documents_assigns_deterministic_ids(tmp_path: Path) -> None
 def test_load_source_document_rejects_empty_inline_text() -> None:
     with pytest.raises(SourceryIngestionError):
         load_source_document("   ")
+
+
+def test_load_source_document_accepts_long_inline_text() -> None:
+    text = "x" * 10_000
+
+    document = load_source_document(text)
+
+    assert document.text == text
+
+
+def test_load_source_document_rejects_missing_path_object(tmp_path: Path) -> None:
+    with pytest.raises(SourceryIngestionError, match="does not exist"):
+        load_source_document(tmp_path / "missing.txt")

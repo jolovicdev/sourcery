@@ -6,7 +6,7 @@
 - `uv` package manager
 - API key for your model provider (for example `DEEPSEEK_API_KEY`)
 
-Base runtime dependency is `blackgeorge` (installed automatically with `sourceryforge`).
+The base runtime dependency is pinned to `blackgeorge==1.3.0` and installs with `sourceryforge`.
 
 PyPI distribution name is `sourceryforge`, while Python import path remains `sourcery`.
 
@@ -21,7 +21,7 @@ uv sync
 Install from PyPI:
 
 ```bash
-pip install sourceryforge
+uv add sourceryforge
 ```
 
 With ingestion adapters (PDF/URL workflows):
@@ -56,7 +56,7 @@ export OPENROUTER_API_KEY="..."
 ```
 
 Set the credentials required by your selected model route before calling extraction.
-For example, `RuntimeConfig(model="deepseek/deepseek-chat")` typically requires `DEEPSEEK_API_KEY`.
+For example, `RuntimeConfig(model="deepseek/deepseek-v4-pro")` and `RuntimeConfig(model="deepseek/deepseek-v4-flash")` require `DEEPSEEK_API_KEY`.
 
 Benchmark scripts use `DEEPSEEK_API_KEY` or `OPENROUTER_API_KEY` depending on `--sourcery-model`.
 
@@ -83,7 +83,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)

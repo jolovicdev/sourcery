@@ -55,7 +55,7 @@ request = ExtractRequest(
         ],
     ),
     options=ExtractOptions(max_passes=2, stop_when_no_new_extractions=True),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat", temperature=0.0),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-flash", temperature=0.0),
 )
 
 result = sourcery.extract(request)

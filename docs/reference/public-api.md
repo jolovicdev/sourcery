@@ -79,6 +79,6 @@ from sourcery.contracts import ExtractionTask, RuntimeConfig
 result = sourcery.extract_from_sources(
     ["sample.pdf", "https://example.com/article"],
     task=ExtractionTask(...),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 ```

@@ -4,12 +4,15 @@ import html
 import json
 from pathlib import Path
 from typing import Any
+import zlib
 
-from sourcery.contracts import DocumentResult
+from pydantic import BaseModel
+
+from sourcery.contracts import AlignedExtraction, DocumentResult
 from sourcery.io.jsonl import load_document_results_jsonl
 
 
-def _sorted_extractions(document: DocumentResult) -> list[Any]:
+def _sorted_extractions(document: DocumentResult) -> list[AlignedExtraction]:
     return sorted(
         [
             extraction
@@ -26,19 +29,14 @@ def _sorted_extractions(document: DocumentResult) -> list[Any]:
     )
 
 
-def _attr_dict(extraction: Any) -> dict[str, Any]:
+def _attr_dict(extraction: AlignedExtraction) -> dict[str, Any]:
     attrs = extraction.attributes
-    if hasattr(attrs, "model_dump"):
-        try:
-            dumped = attrs.model_dump(mode="json")
-            if isinstance(dumped, dict):
-                return dumped
-        except Exception:
-            pass
+    if isinstance(attrs, BaseModel):
+        return attrs.model_dump(mode="json")
     return dict(attrs)
 
 
-def _color_for_entity(entity: str, index: int) -> str:
+def _color_for_entity(entity: str) -> str:
     palette = [
         "#d2f4ea",
         "#ffe5b4",
@@ -50,8 +48,7 @@ def _color_for_entity(entity: str, index: int) -> str:
         "#e7d8ff",
         "#d4f1f4",
     ]
-    seed = abs(hash(entity)) % len(palette)
-    return palette[(seed + index) % len(palette)]
+    return palette[zlib.crc32(entity.encode("utf-8")) % len(palette)]
 
 
 def _highlighted_text(document: DocumentResult, payload: list[dict[str, Any]]) -> str:
@@ -98,7 +95,7 @@ def _build_payload(document: DocumentResult) -> list[dict[str, Any]]:
                 "char_start": extraction.char_start,
                 "char_end": extraction.char_end,
                 "attributes": _attr_dict(extraction),
-                "color": _color_for_entity(extraction.entity, index),
+                "color": _color_for_entity(extraction.entity),
             }
         )
     return payload
@@ -108,7 +105,8 @@ def render_reviewer_html(document: DocumentResult, *, title: str = "Sourcery Rev
     payload = _build_payload(document)
     entities = sorted({item["entity"] for item in payload})
     highlighted = _highlighted_text(document, payload) if payload else html.escape(document.text)
-    payload_json = json.dumps(payload, ensure_ascii=False)
+    payload_json = json.dumps(payload, ensure_ascii=False).replace("<", "\\u003c")
+    document_id_json = json.dumps(document.document_id, ensure_ascii=False).replace("<", "\\u003c")
     entity_options = "".join(
         ["<option value=''>All entities</option>"]
         + [
@@ -187,12 +185,13 @@ def render_reviewer_html(document: DocumentResult, *, title: str = "Sourcery Rev
         "</div>"
         "<script>"
         f"const srPayload={payload_json};"
-        f"const srDocId={json.dumps(document.document_id)};"
+        f"const srDocId={document_id_json};"
         "const srStorageKey='sourcery-review:'+srDocId;"
-        "function srReadSaved(){try{return JSON.parse(localStorage.getItem(srStorageKey)||'{}');}catch(_){return {};}}"
+        "function srReadSaved(){try{const value=JSON.parse(localStorage.getItem(srStorageKey)||'{}');return value&&typeof value==='object'?value:{};}catch(_){return {};}}"
         "function srSave(statusByIdx){localStorage.setItem(srStorageKey,JSON.stringify(statusByIdx));}"
         "const srSaved=srReadSaved();"
-        "const srState=srPayload.map(item=>({...item,review_status:srSaved[item.idx]||'pending'}));"
+        "const srStatuses=new Set(['pending','approved','rejected']);"
+        "const srState=srPayload.map(item=>({...item,review_status:srStatuses.has(srSaved[item.idx])?srSaved[item.idx]:'pending'}));"
         "let srSelected=srState.length?srState[0].idx:null;"
         "const srSearch=document.getElementById('sr-search');"
         "const srEntity=document.getElementById('sr-entity');"
@@ -200,6 +199,7 @@ def render_reviewer_html(document: DocumentResult, *, title: str = "Sourcery Rev
         "const srList=document.getElementById('sr-list');"
         "const srDetail=document.getElementById('sr-detail');"
         "const srText=document.getElementById('sr-text');"
+        "function srEscape(value){const el=document.createElement('span');el.textContent=String(value);return el.innerHTML;}"
         "function srStatusClass(status){if(status==='approved')return 'sr-pill-approved';if(status==='rejected')return 'sr-pill-rejected';return 'sr-pill-pending';}"
         "function srFilter(item){"
         "const query=(srSearch.value||'').trim().toLowerCase();"
@@ -222,8 +222,8 @@ def render_reviewer_html(document: DocumentResult, *, title: str = "Sourcery Rev
         "else{"
         "srList.innerHTML=rows.map(item=>`"
         "<div class='sr-row ${item.idx===srSelected?'sr-row-selected':''}' data-idx='${item.idx}'>"
-        "<div class='sr-row-main'>${item.text}<span class='sr-pill ${srStatusClass(item.review_status)}'>${item.review_status}</span>"
-        "<div class='sr-row-meta'>${item.entity} | ${item.char_start}-${item.char_end} | ${item.alignment_status}</div></div>"
+        "<div class='sr-row-main'>${srEscape(item.text)}<span class='sr-pill ${srStatusClass(item.review_status)}'>${item.review_status}</span>"
+        "<div class='sr-row-meta'>${srEscape(item.entity)} | ${item.char_start}-${item.char_end} | ${item.alignment_status}</div></div>"
         "<div class='sr-row-controls'>"
         "<button class='sr-mini sr-mini-ok' data-action='approve'>Approve</button>"
         "<button class='sr-mini sr-mini-bad' data-action='reject'>Reject</button>"

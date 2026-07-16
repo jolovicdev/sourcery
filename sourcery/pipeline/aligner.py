@@ -3,9 +3,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from difflib import SequenceMatcher
 import re
-from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError
 
 from sourcery.contracts import (
     AlignedExtraction,
@@ -22,15 +21,15 @@ from sourcery.pipeline.chunking import TokenSpan, tokenize_with_spans
 class AlignmentResult(BaseModel):
     aligned: list[AlignedExtraction]
     unresolved_count: int = 0
-    warnings: list[str] = []
+    warnings: list[str] = Field(default_factory=list)
 
 
-def _find_exact_span(text: str, query: str) -> tuple[int, int] | None:
+def find_exact_span(text: str, query: str, start: int = 0) -> tuple[int, int] | None:
     pattern = re.escape(query)
-    match = re.search(pattern, text, flags=re.IGNORECASE)
+    match = re.search(pattern, text[start:], flags=re.IGNORECASE)
     if match is None:
         return None
-    return match.start(), match.end()
+    return start + match.start(), start + match.end()
 
 
 def _normalize_token(token: str) -> str:
@@ -40,7 +39,7 @@ def _normalize_token(token: str) -> str:
     return normalized
 
 
-def _fuzzy_span(text: str, query: str, threshold: float) -> tuple[int, int] | None:
+def find_fuzzy_span(text: str, query: str, threshold: float) -> tuple[int, int] | None:
     text_tokens = tokenize_with_spans(text)
     query_tokens = tokenize_with_spans(query)
     if not text_tokens or not query_tokens:
@@ -72,15 +71,40 @@ def _fuzzy_span(text: str, query: str, threshold: float) -> tuple[int, int] | No
 
 
 def _partial_span(text: str, query: str) -> tuple[int, int] | None:
-    query_tokens = tokenize_with_spans(query)
-    if len(query_tokens) < 2:
+    text_tokens = [
+        token
+        for token in tokenize_with_spans(text)
+        if any(character.isalnum() for character in token.token)
+    ]
+    query_tokens = [
+        token
+        for token in tokenize_with_spans(query)
+        if any(character.isalnum() for character in token.token)
+    ]
+    if not text_tokens or len(query_tokens) < 2:
         return None
-    for token in query_tokens:
-        pattern = re.escape(token.token)
-        match = re.search(pattern, text, flags=re.IGNORECASE)
-        if match is not None:
-            return match.start(), match.end()
-    return None
+
+    previous_lengths = [0] * (len(query_tokens) + 1)
+    best_length = 0
+    best_text_end = 0
+    for text_index, text_token in enumerate(text_tokens, start=1):
+        current_lengths = [0] * (len(query_tokens) + 1)
+        normalized_text = text_token.token.casefold()
+        for query_index, query_token in enumerate(query_tokens, start=1):
+            if normalized_text != query_token.token.casefold():
+                continue
+            current_lengths[query_index] = previous_lengths[query_index - 1] + 1
+            if current_lengths[query_index] > best_length:
+                best_length = current_lengths[query_index]
+                best_text_end = text_index
+        previous_lengths = current_lengths
+
+    if best_length < 2 or best_length * 2 <= len(query_tokens):
+        return None
+
+    start_token = text_tokens[best_text_end - best_length]
+    end_token = text_tokens[best_text_end - 1]
+    return start_token.char_start, end_token.char_end
 
 
 def _token_range(
@@ -101,20 +125,22 @@ def _token_range(
 
 def _coerce_attributes(
     candidate: ExtractionCandidate, schema: EntitySchemaSet
-) -> tuple[BaseModel | dict[str, Any], str | None]:
+) -> tuple[BaseModel | None, str | None]:
     by_name = schema.by_name()
     entity_spec = by_name.get(candidate.entity)
     if entity_spec is None:
-        return candidate.attributes, f"Unknown entity '{candidate.entity}' from model output"
-
-    if isinstance(candidate.attributes, BaseModel):
-        return candidate.attributes, None
+        return None, f"Unknown entity '{candidate.entity}' from model output"
 
     try:
-        validated = entity_spec.attributes_model.model_validate(candidate.attributes)
+        attributes = (
+            candidate.attributes.model_dump()
+            if isinstance(candidate.attributes, BaseModel)
+            else candidate.attributes
+        )
+        validated = entity_spec.attributes_model.model_validate(attributes)
         return validated, None
-    except Exception as exc:
-        return candidate.attributes, f"Invalid attributes for entity '{candidate.entity}': {exc}"
+    except ValidationError as exc:
+        return None, f"Invalid attributes for entity '{candidate.entity}': {exc}"
 
 
 def align_candidates(
@@ -128,6 +154,7 @@ def align_candidates(
     aligned: list[AlignedExtraction] = []
     warnings: list[str] = []
     unresolved_count = 0
+    exact_search_starts: dict[tuple[str, str], int] = {}
 
     chunk_tokens = tokenize_with_spans(chunk.text)
 
@@ -135,13 +162,23 @@ def align_candidates(
         attributes, attributes_warning = _coerce_attributes(candidate, schema)
         if attributes_warning is not None:
             warnings.append(attributes_warning)
+        if attributes is None:
+            continue
 
         status: AlignmentStatus = "unresolved"
-        span = _find_exact_span(chunk.text, candidate.text)
+        candidate_key = (candidate.entity, candidate.text.casefold())
+        search_start = exact_search_starts.get(candidate_key, 0)
+        span = find_exact_span(chunk.text, candidate.text, search_start)
         if span is not None:
             status = "exact"
+            exact_search_starts[candidate_key] = span[1]
+        elif search_start:
+            warnings.append(
+                f"Duplicate candidate '{candidate.entity}:{candidate.text}' exceeds source occurrences"
+            )
+            continue
         elif options.enable_fuzzy_alignment:
-            span = _fuzzy_span(chunk.text, candidate.text, options.fuzzy_alignment_threshold)
+            span = find_fuzzy_span(chunk.text, candidate.text, options.fuzzy_alignment_threshold)
             if span is not None:
                 status = "fuzzy"
 

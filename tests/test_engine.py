@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from sourcery.contracts import ExtractRequest
+from typing import Any
+
+import pytest
+
+from sourcery.contracts import ChunkExtractionReport, ExtractRequest
+from sourcery.exceptions import RuntimeIntegrationError
 from sourcery.runtime.engine import SourceryEngine
 
 
@@ -124,21 +129,39 @@ def test_streaming_yields_extraction_chunk_and_pass_events(extract_request: Extr
     assert final.metrics.extracted_total > 0
 
 
-def test_streaming_uses_batch_concurrency_one(extract_request: ExtractRequest) -> None:
+def test_streaming_uses_configured_batch_concurrency(extract_request: ExtractRequest) -> None:
     from tests.conftest import FakeRuntime
+    from sourcery.contracts import SourceDocument, StreamChunkDone, StreamExtractionAdded
 
-    extract_request.options.batch_concurrency = 8
-    FakeRuntime.last_batch_concurrency = None
+    class RecordingRuntime(FakeRuntime):
+        recorded_batches: list[tuple[int, int]] = []
 
-    engine = SourceryEngine(runtime_factory=FakeRuntime)
+        def run_pass(self, **kwargs: Any) -> list[ChunkExtractionReport]:
+            RecordingRuntime.recorded_batches.append(
+                (len(kwargs["chunks"]), kwargs["batch_concurrency"])
+            )
+            return list(reversed(super().run_pass(**kwargs)))
+
+    extract_request.documents = [
+        SourceDocument(document_id="doc-1", text="Alice works at Acme. " * 20)
+    ]
+    extract_request.options.max_chunk_chars = 100
+    extract_request.options.max_passes = 1
+    extract_request.options.batch_concurrency = 3
+
+    engine = SourceryEngine(runtime_factory=RecordingRuntime)
     gen = engine.extract_stream(extract_request)
-    try:
-        while True:
-            next(gen)
-    except StopIteration:
-        pass
 
-    assert FakeRuntime.last_batch_concurrency == 1
+    events = [next(gen)]
+    assert isinstance(events[0], StreamExtractionAdded)
+    assert RecordingRuntime.recorded_batches == [(3, 3)]
+
+    events.extend(gen)
+
+    assert RecordingRuntime.recorded_batches == [(3, 3), (2, 3)]
+    assert [event.chunk_id for event in events if isinstance(event, StreamChunkDone)] == [
+        f"doc-1:p1:c{index}" for index in range(5)
+    ]
 
 
 def test_async_reconciliation_uses_async_path(extract_request: ExtractRequest) -> None:
@@ -244,15 +267,15 @@ def test_custom_dependencies_are_invoked(extract_request: ExtractRequest) -> Non
     aligner_called: list[bool] = []
     merger_called: list[bool] = []
 
-    def tracking_planner(*args, **kwargs):
+    def tracking_planner(*args: Any, **kwargs: Any) -> Any:
         planner_called.append(True)
         return plan_chunks(*args, **kwargs)
 
-    def tracking_aligner(*args, **kwargs):
+    def tracking_aligner(*args: Any, **kwargs: Any) -> Any:
         aligner_called.append(True)
         return align_candidates(*args, **kwargs)
 
-    def tracking_merger(*args, **kwargs):
+    def tracking_merger(*args: Any, **kwargs: Any) -> Any:
         merger_called.append(True)
         return merge_non_overlapping(*args, **kwargs)
 
@@ -272,3 +295,102 @@ def test_custom_dependencies_are_invoked(extract_request: ExtractRequest) -> Non
     assert len(planner_called) > 0, "chunk_planner was never called"
     assert len(aligner_called) > 0, "aligner was never called"
     assert len(merger_called) > 0, "merger was never called"
+
+
+def test_engine_supplies_task_examples_to_runtime_prompts(
+    extract_request: ExtractRequest,
+) -> None:
+    from tests.conftest import FakeRuntime
+
+    class PromptInspectingRuntime(FakeRuntime):
+        system_prompt = ""
+
+        def run_pass(self, **kwargs: Any) -> list[ChunkExtractionReport]:
+            chunk = kwargs["chunks"][0]
+            envelope = self.prompt_compiler.compile(
+                self.schema_set,
+                chunk,
+                kwargs["pass_id"],
+                instructions=kwargs["task_instructions"],
+            )
+            PromptInspectingRuntime.system_prompt = envelope.system
+            return super().run_pass(**kwargs)
+
+    SourceryEngine(runtime_factory=PromptInspectingRuntime).extract(extract_request)
+
+    assert "Alice works at Acme." in PromptInspectingRuntime.system_prompt
+    assert '"role": "CEO"' in PromptInspectingRuntime.system_prompt
+
+
+def test_engine_rejects_missing_runtime_reports_and_closes_runtime(
+    extract_request: ExtractRequest,
+) -> None:
+    from tests.conftest import FakeRuntime
+
+    class BrokenRuntime(FakeRuntime):
+        instance: "BrokenRuntime | None" = None
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.closed = False
+            BrokenRuntime.instance = self
+
+        def run_pass(self, **kwargs: Any) -> list[ChunkExtractionReport]:
+            return []
+
+        def close(self) -> None:
+            self.closed = True
+
+    with pytest.raises(RuntimeIntegrationError, match="missing"):
+        SourceryEngine(runtime_factory=BrokenRuntime).extract(extract_request)
+
+    assert BrokenRuntime.instance is not None
+    assert BrokenRuntime.instance.closed is True
+
+
+def test_engine_rejects_unsupported_reconciliation(extract_request: ExtractRequest) -> None:
+    from tests.conftest import FakeRuntime
+
+    extract_request.runtime.reconciliation.enabled = True
+
+    with pytest.raises(RuntimeIntegrationError, match="does not support"):
+        SourceryEngine(runtime_factory=FakeRuntime).extract(extract_request)
+
+
+def test_engine_does_not_construct_runtime_when_trace_setup_fails(
+    extract_request: ExtractRequest,
+) -> None:
+    from tests.conftest import FakeRuntime
+    from sourcery.contracts import EngineDependencies
+    from sourcery.pipeline import (
+        ExampleValidator,
+        PromptCompiler,
+        align_candidates,
+        merge_non_overlapping,
+        plan_chunks,
+    )
+
+    class TrackingRuntime(FakeRuntime):
+        created = False
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            TrackingRuntime.created = True
+            super().__init__(*args, **kwargs)
+
+    def fail_trace_setup(*, run_id: str, model: str) -> Any:
+        raise RuntimeError("trace setup failed")
+
+    dependencies = EngineDependencies(
+        runtime_factory=TrackingRuntime,
+        prompt_compiler=PromptCompiler(),
+        example_validator=ExampleValidator(),
+        chunk_planner=plan_chunks,
+        aligner=align_candidates,
+        merger=merge_non_overlapping,
+        trace_collector_factory=fail_trace_setup,
+    )
+
+    with pytest.raises(RuntimeError, match="trace setup failed"):
+        SourceryEngine(dependencies=dependencies).extract(extract_request)
+
+    assert TrackingRuntime.created is False

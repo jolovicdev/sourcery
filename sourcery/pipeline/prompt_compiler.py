@@ -14,6 +14,12 @@ from sourcery.contracts import (
 
 
 class PromptCompiler:
+    def __init__(self, examples: Sequence[ExtractionExample] = ()) -> None:
+        self._examples = tuple(examples)
+
+    def with_examples(self, examples: Sequence[ExtractionExample]) -> PromptCompiler:
+        return PromptCompiler(examples)
+
     def compile(
         self,
         task_or_schema: ExtractionTask | EntitySchemaSet,
@@ -24,6 +30,7 @@ class PromptCompiler:
         examples: Sequence[ExtractionExample] | None = None,
         refinement_context: str | None = None,
     ) -> PromptEnvelope:
+        task_examples: Sequence[ExtractionExample]
         if isinstance(task_or_schema, ExtractionTask):
             task_instructions = task_or_schema.instructions
             schema_set = task_or_schema.entity_schema
@@ -31,18 +38,47 @@ class PromptCompiler:
         else:
             task_instructions = instructions or ""
             schema_set = task_or_schema
-            task_examples = list(examples or [])
+            task_examples = self._examples if examples is None else examples
 
-        schema_summary = self._schema_summary(schema_set)
-        examples_block = self._examples_block(task_examples)
+        schema_rows = [
+            {
+                "entity": entity.name,
+                "attributes": list(entity.attributes_model.model_fields),
+            }
+            for entity in schema_set.entities
+        ]
+        schema_summary = "Allowed entities:\n" + json.dumps(
+            schema_rows, ensure_ascii=False, indent=2
+        )
+        examples_block = ""
+        if task_examples:
+            rendered_examples = [
+                {
+                    "text": example.text,
+                    "extractions": [
+                        {
+                            "entity": extraction.entity,
+                            "text": extraction.text,
+                            "attributes": extraction.attributes,
+                        }
+                        for extraction in example.extractions
+                    ],
+                }
+                for example in task_examples
+            ]
+            examples_block = "Few-shot examples:\n" + json.dumps(
+                rendered_examples, ensure_ascii=False, indent=2
+            )
         system = "\n\n".join(
-            [
+            part
+            for part in [
                 task_instructions.strip(),
                 "Return JSON that matches the response schema exactly.",
                 "Use verbatim text spans from the chunk.",
                 schema_summary,
                 examples_block,
             ]
+            if part
         )
 
         user_payload: dict[str, Any] = {
@@ -67,33 +103,3 @@ class PromptCompiler:
             ]
         }
         return PromptEnvelope.from_components(system=system, user=user, schema_data=schema_data)
-
-    def _schema_summary(self, schema_set: EntitySchemaSet) -> str:
-        rows = []
-        for entity in schema_set.entities:
-            attributes_fields = list(entity.attributes_model.model_fields.keys())
-            rows.append(
-                {
-                    "entity": entity.name,
-                    "attributes": attributes_fields,
-                }
-            )
-        return "Allowed entities:\n" + json.dumps(rows, ensure_ascii=False, indent=2)
-
-    def _examples_block(self, examples: Sequence[ExtractionExample]) -> str:
-        rendered_examples = []
-        for example in examples:
-            rendered_examples.append(
-                {
-                    "text": example.text,
-                    "extractions": [
-                        {
-                            "entity": extraction.entity,
-                            "text": extraction.text,
-                            "attributes": extraction.attributes,
-                        }
-                        for extraction in example.extractions
-                    ],
-                }
-            )
-        return "Few-shot examples:\n" + json.dumps(rendered_examples, ensure_ascii=False, indent=2)

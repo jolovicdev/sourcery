@@ -48,11 +48,20 @@ Optional workflows:
 
 ## Behavior That Affects Output
 
-- If `allow_unresolved=False` (default), unresolved candidates are counted in metrics but not returned in `documents[*].extractions`.
-- If `strict_example_alignment=True` (default in `ExtractionTask`) and examples are unresolved, extraction raises `ExampleValidationError` before runtime execution.
+- If `allow_unresolved=False` (default), unresolved candidates are counted in metrics but not
+  returned in `documents[*].extractions`.
+- With `accept_partial_exact=True`, partial alignment requires a contiguous match of at least two
+  word tokens covering more than half of the candidate's word tokens.
+- Unresolved results with the same entity and text are deduplicated across passes regardless of
+  attribute differences. Merge priority retains the earlier pass, then the higher-confidence
+  result within the same pass.
+- If `strict_example_alignment=True` (default in `ExtractionTask`) and examples are unresolved,
+  extraction raises `ExampleValidationError` before runtime execution.
 - `SourceryEngine.aextract(...)` uses native async runtime calls.
-- `SourceryEngine.extract_stream(...)` emits chunk/pass result events and still returns the same final `ExtractResult` when exhausted.
-- If reconciliation workforce fails at runtime, the engine falls back to deterministic canonical-claim construction and records warnings.
+- `SourceryEngine.extract_stream(...)` processes bounded concurrent chunk batches, emits each batch
+  in deterministic chunk order, and still returns the same final `ExtractResult` when exhausted.
+- If reconciliation workforce fails at runtime, the engine falls back to deterministic
+  canonical-claim construction and records warnings.
 
 ## Practical Baseline
 
@@ -60,7 +69,7 @@ Optional workflows:
 from sourcery.contracts import ExtractOptions, RuntimeConfig
 
 runtime = RuntimeConfig(
-    model="deepseek/deepseek-chat",
+    model="deepseek/deepseek-v4-pro",
     temperature=0.0,
 )
 

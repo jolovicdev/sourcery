@@ -30,12 +30,7 @@ This map links each tracked module to its responsibility.
 - `sourcery/runtime/errors.py`: provider error classification.
 - `sourcery/runtime/model_gateway.py`: schema + parser bridge.
 - `sourcery/runtime/blackgeorge_models.py`: runtime payload adapters.
-- `sourcery/runtime/blackgeorge_protocols.py`: internal runtime typing.
-- `sourcery/runtime/blackgeorge_retry_mixin.py`: retry/backoff/pause logic.
-- `sourcery/runtime/blackgeorge_refinement_mixin.py`: refinement context handling.
-- `sourcery/runtime/blackgeorge_flow_mixin.py`: chunk extraction flow.
-- `sourcery/runtime/blackgeorge_reconciliation_mixin.py`: canonical-claim workflow.
-- `sourcery/runtime/blackgeorge_runtime.py`: composed runtime implementation.
+- `sourcery/runtime/blackgeorge_runtime.py`: BlackGeorge flow, retry, refinement, and reconciliation adapter.
 - `sourcery/runtime/__init__.py`: runtime public exports.
 
 ## Ingestion
@@ -80,5 +75,5 @@ This map links each tracked module to its responsibility.
 - `tests/test_io.py`: JSONL/viewer/reviewer behavior.
 - `tests/test_runtime_errors.py`: runtime error classifier behavior.
 - `tests/test_model_gateway.py`: response parsing behavior.
-- `tests/test_blackgeorge_runtime.py`: runtime mixin regressions.
+- `tests/test_blackgeorge_runtime.py`: BlackGeorge 1.3.0 runtime integration regressions.
 - `tests/test_benchmarks.py`: benchmark utility behavior.

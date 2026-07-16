@@ -32,20 +32,15 @@ Any runtime implementation that satisfies these interfaces can be swapped in.
 
 `EngineDependencies` wires the runtime factory, prompt compiler, example validator, chunk planner, aligner, merger, and trace collector. This keeps the engine testable without making those dependency hooks decorative.
 
-## BlackGeorge Runtime Composition
+## BlackGeorge Runtime
 
-`BlackGeorgeRuntime` combines focused mixins:
-
-- `blackgeorge_retry_mixin.py`: retry/backoff and paused-run resume.
-- `blackgeorge_refinement_mixin.py`: per-document session refinement contexts.
-- `blackgeorge_flow_mixin.py`: chunk flow execution and report normalization.
-- `blackgeorge_reconciliation_mixin.py`: document-level reconciliation workforce.
+`BlackGeorgeRuntime` is one concrete adapter around BlackGeorge 1.3.0. It owns retry and paused-run policy, per-document session refinement, chunk flow normalization, and optional document reconciliation. Runtime protocols stay at the engine boundary rather than being repeated as mixin self-types.
 
 `model_gateway.py` builds per-entity response schema variants and parses structured candidate output.
 
 ## Observability and Replay
 
-- Runtime subscribes to desk event bus (`run.*`, `worker.*`, `step.*`, `llm.*`, `tool.*`).
+- Runtime subscribes to every desk event and reads completed run events from the run store.
 - Events are normalized to `EventRecord` and attached to `ExtractionRunTrace`.
 - `replay_run` reads raw run data/events from run store for audits and debugging.
 

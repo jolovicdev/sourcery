@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+from types import SimpleNamespace
+
 import pytest
 
 from sourcery.benchmarks.config import TextType
@@ -10,12 +13,18 @@ from sourcery.benchmarks.run import (
     _normalize_langextract_model,
     _parse_text_types,
     _resolve_langextract_connection,
+    _run_langextract,
+    parse_args,
 )
 
 
 def test_parse_text_types_accepts_multiple_values() -> None:
     parsed = _parse_text_types("english,japanese")
     assert parsed == [TextType.ENGLISH, TextType.JAPANESE]
+
+
+def test_benchmark_defaults_to_deepseek_v4_flash() -> None:
+    assert parse_args([]).sourcery_model == "deepseek/deepseek-v4-flash"
 
 
 def test_parse_text_types_rejects_invalid_value() -> None:
@@ -62,7 +71,7 @@ def test_call_langextract_extract_drops_unknown_kwargs_iteratively() -> None:
 
 
 def test_normalize_langextract_model_strips_provider_prefixes() -> None:
-    assert _normalize_langextract_model("deepseek/deepseek-chat") == "deepseek-chat"
+    assert _normalize_langextract_model("deepseek/deepseek-v4-flash") == "deepseek-v4-flash"
     assert (
         _normalize_langextract_model("openrouter/google/gemini-3-flash-preview")
         == "google/gemini-3-flash-preview"
@@ -87,10 +96,57 @@ def test_resolve_langextract_connection_uses_openrouter_env(
 def test_resolve_langextract_connection_uses_deepseek_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
     provider_name, api_key, base_url = _resolve_langextract_connection(
-        sourcery_model="deepseek/deepseek-chat",
+        sourcery_model="deepseek/deepseek-v4-flash",
         deepseek_base_url=None,
         openrouter_base_url=None,
     )
     assert provider_name == "deepseek"
     assert api_key == "test-key"
     assert base_url == "https://api.deepseek.com"
+
+
+def test_langextract_unique_grounded_excludes_unresolved_entities(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = SimpleNamespace(
+        extractions=[
+            SimpleNamespace(
+                extraction_text="Alice",
+                char_interval=SimpleNamespace(start_pos=0, end_pos=5),
+            ),
+            SimpleNamespace(extraction_text="Ghost", char_interval=None),
+        ]
+    )
+    modules = {
+        "langextract": SimpleNamespace(extract=lambda **_kwargs: document),
+        "langextract.data": SimpleNamespace(
+            ExampleData=lambda **kwargs: kwargs,
+            Extraction=lambda **kwargs: kwargs,
+        ),
+        "langextract.factory": SimpleNamespace(ModelConfig=lambda **kwargs: kwargs),
+        "langextract.providers": SimpleNamespace(
+            load_builtins_once=lambda: None,
+            load_plugins_once=lambda: None,
+        ),
+    }
+    for name, module in modules.items():
+        monkeypatch.setitem(sys.modules, name, module)
+
+    record = _run_langextract(
+        text_type=TextType.ENGLISH,
+        text="Alice and Ghost",
+        model="deepseek-v4-flash",
+        api_key="test-key",
+        base_url="https://example.test",
+        batch_concurrency=2,
+        max_chunk_chars=100,
+        max_passes=1,
+        context_window_chars=20,
+        temperature=0.0,
+    )
+
+    assert record.raw_extractions == 2
+    assert record.grounded_extractions == 1
+    assert record.unique_grounded == 1
+    assert record.unresolved_extractions == 1
+    assert record.sample_entities == ["Alice"]

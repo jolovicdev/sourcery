@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Generator, Sequence
+from collections.abc import Generator
 from dataclasses import dataclass, field
-from typing import Any, Callable, Union
+from typing import Callable, Union
 
 from sourcery.contracts import (
     AlignedExtraction,
     ChunkExtractionReport,
     DocumentResult,
     EngineDependencies,
+    EventRecord,
     ExtractRequest,
     ExtractResult,
     ExtractionProvenance,
@@ -19,10 +20,10 @@ from sourcery.contracts import (
     StreamExtractionAdded,
     StreamPassDone,
     TextChunk,
-    EventRecord,
     new_run_id,
     utc_now,
 )
+from sourcery.exceptions import RuntimeIntegrationError
 from sourcery.observability.trace import RunTraceCollector
 from sourcery.pipeline import (
     ExampleValidator,
@@ -31,22 +32,13 @@ from sourcery.pipeline import (
     merge_non_overlapping,
     plan_chunks,
 )
-from sourcery.runtime.base import AsyncDocumentReconciliationRuntime, ChunkRuntime
-from sourcery.runtime.base import DocumentReconciliationRuntime
+from sourcery.runtime.base import (
+    AsyncDocumentReconciliationRuntime,
+    ChunkRuntime,
+    ClosableRuntime,
+    DocumentReconciliationRuntime,
+)
 from sourcery.runtime.blackgeorge_runtime import BlackGeorgeRuntime
-
-
-def _extraction_key(ext: AlignedExtraction) -> tuple[Any, ...]:
-    return (
-        ext.entity,
-        ext.text,
-        ext.char_start,
-        ext.char_end,
-        ext.alignment_status,
-        ext.provenance.pass_id,
-        ext.provenance.chunk_id,
-        id(ext),
-    )
 
 
 @dataclass
@@ -92,44 +84,145 @@ class SourceryEngine:
             self._aligner = dependencies.aligner
             self._merger = dependencies.merger
 
-    # -- public API ------------------------------------------------------------
-
     def extract(self, request: ExtractRequest) -> ExtractResult:
-        return self._execute(request=request)
+        state = self._start_run(request)
+        try:
+            for pass_id in range(1, request.options.max_passes + 1):
+                chunks = self._plan_pass(state, request, pass_id)
+                reports = state.runtime.run_pass(
+                    run_id=state.run_id,
+                    pass_id=pass_id,
+                    chunks=chunks,
+                    task_instructions=request.task.instructions,
+                    batch_concurrency=request.options.batch_concurrency,
+                )
+                self._validate_reports(
+                    run_id=state.run_id,
+                    pass_id=pass_id,
+                    chunks=chunks,
+                    reports=reports,
+                )
+                additions = sum(self._process_report(state, report, request) for report in reports)
+                if request.options.stop_when_no_new_extractions and additions == 0:
+                    break
+            return self._finalize(state, request)
+        finally:
+            self._close_runtime(state.runtime)
 
     async def aextract(self, request: ExtractRequest) -> ExtractResult:
-        return await self._aexecute(request=request)
+        state = self._start_run(request)
+        try:
+            for pass_id in range(1, request.options.max_passes + 1):
+                chunks = self._plan_pass(state, request, pass_id)
+                reports = await state.runtime.arun_pass(
+                    run_id=state.run_id,
+                    pass_id=pass_id,
+                    chunks=chunks,
+                    task_instructions=request.task.instructions,
+                    batch_concurrency=request.options.batch_concurrency,
+                )
+                self._validate_reports(
+                    run_id=state.run_id,
+                    pass_id=pass_id,
+                    chunks=chunks,
+                    reports=reports,
+                )
+                additions = sum(self._process_report(state, report, request) for report in reports)
+                if request.options.stop_when_no_new_extractions and additions == 0:
+                    break
+            return await self._finalize_async(state, request)
+        finally:
+            self._close_runtime(state.runtime)
 
     StreamEvent = Union[StreamExtractionAdded, StreamChunkDone, StreamPassDone]
 
     def extract_stream(
         self, request: ExtractRequest
     ) -> Generator[StreamEvent, None, ExtractResult]:
-        result = yield from self._execute_stream(request=request)
-        return result
+        state = self._start_run(request)
+        try:
+            for pass_id in range(1, request.options.max_passes + 1):
+                chunks = self._plan_pass(state, request, pass_id)
+                additions = 0
+
+                batch_size = request.options.batch_concurrency
+                for batch_start in range(0, len(chunks), batch_size):
+                    batch = chunks[batch_start : batch_start + batch_size]
+                    reports = state.runtime.run_pass(
+                        run_id=state.run_id,
+                        pass_id=pass_id,
+                        chunks=batch,
+                        task_instructions=request.task.instructions,
+                        batch_concurrency=batch_size,
+                    )
+                    self._validate_reports(
+                        run_id=state.run_id,
+                        pass_id=pass_id,
+                        chunks=batch,
+                        reports=reports,
+                    )
+                    reports_by_chunk = {report.chunk.chunk_id: report for report in reports}
+                    for chunk in batch:
+                        report = reports_by_chunk[chunk.chunk_id]
+                        document_id = report.chunk.document_id
+                        previous_ids = {
+                            id(extraction) for extraction in state.document_extractions[document_id]
+                        }
+                        additions += self._process_report(state, report, request)
+                        for extraction in state.document_extractions[document_id]:
+                            if id(extraction) not in previous_ids:
+                                yield StreamExtractionAdded(
+                                    document_id=document_id,
+                                    extraction=extraction,
+                                )
+                        yield StreamChunkDone(
+                            chunk_id=report.chunk.chunk_id,
+                            document_id=document_id,
+                            pass_id=pass_id,
+                            candidates_found=len(report.candidates),
+                        )
+
+                yield StreamPassDone(
+                    pass_id=pass_id,
+                    additions_this_pass=additions,
+                    extractions_so_far=sum(
+                        len(extractions) for extractions in state.document_extractions.values()
+                    ),
+                )
+                if request.options.stop_when_no_new_extractions and additions == 0:
+                    break
+
+            return self._finalize(state, request)
+        finally:
+            self._close_runtime(state.runtime)
 
     def replay_run(
         self, request: ExtractRequest, raw_run_id: str
     ) -> tuple[dict[str, object] | None, list[EventRecord]]:
         runtime = self._make_runtime(request)
-        replay, events = runtime.replay_run(raw_run_id)
-        return replay, events
-
-    # -- helpers ---------------------------------------------------------------
+        try:
+            replay, events = runtime.replay_run(raw_run_id)
+            return replay, events
+        finally:
+            self._close_runtime(runtime)
 
     def _make_runtime(self, request: ExtractRequest) -> ChunkRuntime:
+        prompt_compiler = self._prompt_compiler
+        if isinstance(prompt_compiler, PromptCompiler):
+            prompt_compiler = prompt_compiler.with_examples(request.task.examples)
         return self._runtime_factory(
             request.runtime,
             request.task.entity_schema,
-            self._prompt_compiler,
+            prompt_compiler,
         )
 
-    def _normalize_documents(self, request: ExtractRequest) -> list[SourceDocument]:
-        return request.normalize_documents()
+    def _close_runtime(self, runtime: ChunkRuntime) -> None:
+        if isinstance(runtime, ClosableRuntime):
+            runtime.close()
 
     def _start_run(self, request: ExtractRequest) -> EngineRunState:
         run_id = new_run_id()
-        documents = self._normalize_documents(request)
+        documents = request.normalize_documents()
 
         issues = self._example_validator.validate(
             task=request.task,
@@ -138,6 +231,11 @@ class SourceryEngine:
         warnings: list[str] = []
         warnings.extend(self._example_validator.enforce_or_warn(task=request.task, issues=issues))
 
+        metrics = RunMetrics(
+            documents_total=len(documents),
+            started_at=utc_now(),
+        )
+        trace_collector = self._trace_collector_factory(run_id=run_id, model=request.runtime.model)
         runtime = self._make_runtime(request)
         reconciliation_runtime: DocumentReconciliationRuntime | None = None
         async_reconciliation_runtime: AsyncDocumentReconciliationRuntime | None = None
@@ -145,12 +243,6 @@ class SourceryEngine:
             reconciliation_runtime = runtime
         if isinstance(runtime, AsyncDocumentReconciliationRuntime):
             async_reconciliation_runtime = runtime
-
-        metrics = RunMetrics(
-            documents_total=len(documents),
-            started_at=utc_now(),
-        )
-        trace_collector = self._trace_collector_factory(run_id=run_id, model=request.runtime.model)
 
         return EngineRunState(
             run_id=run_id,
@@ -182,14 +274,13 @@ class SourceryEngine:
         state: EngineRunState,
         report: ChunkExtractionReport,
         request: ExtractRequest,
-        pass_id: int,
     ) -> int:
         state.trace_collector.add_report_events(report)
         state.total_candidates += len(report.candidates)
 
         provenance = ExtractionProvenance(
             run_id=state.run_id,
-            pass_id=pass_id,
+            pass_id=report.pass_id,
             chunk_id=report.chunk.chunk_id,
             worker_name=report.worker_name,
             model=report.model,
@@ -214,21 +305,51 @@ class SourceryEngine:
         state.document_extractions[doc_id] = merged
         return additions
 
+    def _validate_reports(
+        self,
+        *,
+        run_id: str,
+        pass_id: int,
+        chunks: list[TextChunk],
+        reports: list[ChunkExtractionReport],
+    ) -> None:
+        expected = {chunk.chunk_id: chunk for chunk in chunks}
+        actual_ids = [report.chunk.chunk_id for report in reports]
+        if len(actual_ids) != len(set(actual_ids)):
+            raise RuntimeIntegrationError(f"Runtime returned duplicate reports for pass {pass_id}")
+        if set(actual_ids) != set(expected):
+            missing = sorted(set(expected) - set(actual_ids))
+            unexpected = sorted(set(actual_ids) - set(expected))
+            raise RuntimeIntegrationError(
+                f"Runtime report mismatch for pass {pass_id}: "
+                f"missing={missing}, unexpected={unexpected}"
+            )
+        for report in reports:
+            if report.run_id != run_id or report.pass_id != pass_id:
+                raise RuntimeIntegrationError(
+                    f"Runtime report metadata does not match pass {pass_id}"
+                )
+            if report.chunk != expected[report.chunk.chunk_id]:
+                raise RuntimeIntegrationError(
+                    f"Runtime changed chunk '{report.chunk.chunk_id}' in pass {pass_id}"
+                )
+
     def _finalize(
         self,
         state: EngineRunState,
         request: ExtractRequest,
     ) -> ExtractResult:
-        state.metrics.candidates_total = state.total_candidates
-        state.metrics.unresolved_total = state.unresolved_total
-        state.metrics.passes_executed = state.pass_count
-        state.metrics.finished_at = utc_now()
-
         documents_result: list[DocumentResult] = []
         for document in state.documents:
             extractions = state.document_extractions.get(document.document_id, [])
             canonical_claims = []
-            if state.reconciliation_runtime is not None and request.runtime.reconciliation.enabled:
+            if request.runtime.reconciliation.enabled:
+                if state.reconciliation_runtime is None:
+                    if state.async_reconciliation_runtime is not None:
+                        message = "Runtime only supports async reconciliation; use aextract()"
+                    else:
+                        message = "Runtime does not support requested document reconciliation"
+                    raise RuntimeIntegrationError(message)
                 reconciliation = state.reconciliation_runtime.reconcile_document(
                     run_id=state.run_id,
                     document=document,
@@ -247,33 +368,13 @@ class SourceryEngine:
                     canonical_claims=canonical_claims,
                 )
             )
-
-        state.metrics.extracted_total = sum(
-            len(document.extractions) for document in documents_result
-        )
-
-        run_trace = state.trace_collector.finalize(
-            chunk_ids=state.chunk_ids,
-            pass_ids=list(range(1, state.pass_count + 1)),
-        )
-
-        return ExtractResult(
-            documents=documents_result,
-            run_trace=run_trace,
-            metrics=state.metrics,
-            warnings=state.warnings,
-        )
+        return self._build_result(state, documents_result)
 
     async def _finalize_async(
         self,
         state: EngineRunState,
         request: ExtractRequest,
     ) -> ExtractResult:
-        state.metrics.candidates_total = state.total_candidates
-        state.metrics.unresolved_total = state.unresolved_total
-        state.metrics.passes_executed = state.pass_count
-        state.metrics.finished_at = utc_now()
-
         documents_result: list[DocumentResult] = []
         for document in state.documents:
             extractions = state.document_extractions.get(document.document_id, [])
@@ -294,12 +395,13 @@ class SourceryEngine:
                         task_instructions=request.task.instructions,
                     )
                 else:
-                    reconciliation = None
-                if reconciliation is not None:
-                    extractions = reconciliation.reconciled_extractions
-                    canonical_claims = reconciliation.canonical_claims
-                    state.warnings.extend(reconciliation.warnings)
-                    state.trace_collector.add_events(reconciliation.events)
+                    raise RuntimeIntegrationError(
+                        "Runtime does not support requested document reconciliation"
+                    )
+                extractions = reconciliation.reconciled_extractions
+                canonical_claims = reconciliation.canonical_claims
+                state.warnings.extend(reconciliation.warnings)
+                state.trace_collector.add_events(reconciliation.events)
             documents_result.append(
                 DocumentResult(
                     document_id=document.document_id,
@@ -308,154 +410,28 @@ class SourceryEngine:
                     canonical_claims=canonical_claims,
                 )
             )
+        return self._build_result(state, documents_result)
 
-        state.metrics.extracted_total = sum(
-            len(document.extractions) for document in documents_result
-        )
-
+    def _build_result(
+        self,
+        state: EngineRunState,
+        documents: list[DocumentResult],
+    ) -> ExtractResult:
+        state.metrics.candidates_total = state.total_candidates
+        state.metrics.extracted_total = sum(len(document.extractions) for document in documents)
+        state.metrics.unresolved_total = state.unresolved_total
+        state.metrics.passes_executed = state.pass_count
+        state.metrics.finished_at = utc_now()
         run_trace = state.trace_collector.finalize(
             chunk_ids=state.chunk_ids,
             pass_ids=list(range(1, state.pass_count + 1)),
         )
-
         return ExtractResult(
-            documents=documents_result,
+            documents=documents,
             run_trace=run_trace,
             metrics=state.metrics,
             warnings=state.warnings,
         )
-
-    # -- runtime pass adapters --------------------------------------------------
-
-    def _run_runtime_pass(
-        self,
-        *,
-        runtime: ChunkRuntime,
-        run_id: str,
-        pass_id: int,
-        chunks: Sequence[TextChunk],
-        task_instructions: str,
-        batch_concurrency: int,
-    ) -> list[ChunkExtractionReport]:
-        return runtime.run_pass(
-            run_id=run_id,
-            pass_id=pass_id,
-            chunks=chunks,
-            task_instructions=task_instructions,
-            batch_concurrency=batch_concurrency,
-        )
-
-    async def _arun_runtime_pass(
-        self,
-        *,
-        runtime: ChunkRuntime,
-        run_id: str,
-        pass_id: int,
-        chunks: Sequence[TextChunk],
-        task_instructions: str,
-        batch_concurrency: int,
-    ) -> list[ChunkExtractionReport]:
-        return await runtime.arun_pass(
-            run_id=run_id,
-            pass_id=pass_id,
-            chunks=chunks,
-            task_instructions=task_instructions,
-            batch_concurrency=batch_concurrency,
-        )
-
-    # -- execution methods (thin orchestration) ---------------------------------
-
-    def _execute(self, *, request: ExtractRequest) -> ExtractResult:
-        state = self._start_run(request)
-        batch_concurrency = request.options.batch_concurrency
-
-        for pass_id in range(1, request.options.max_passes + 1):
-            chunks = self._plan_pass(state, request, pass_id)
-            reports = self._run_runtime_pass(
-                runtime=state.runtime,
-                run_id=state.run_id,
-                pass_id=pass_id,
-                chunks=chunks,
-                task_instructions=request.task.instructions,
-                batch_concurrency=batch_concurrency,
-            )
-            additions_this_pass = 0
-            for report in reports:
-                additions_this_pass += self._process_report(state, report, request, pass_id)
-            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
-                break
-
-        return self._finalize(state, request)
-
-    async def _aexecute(self, *, request: ExtractRequest) -> ExtractResult:
-        state = self._start_run(request)
-        batch_concurrency = request.options.batch_concurrency
-
-        for pass_id in range(1, request.options.max_passes + 1):
-            chunks = self._plan_pass(state, request, pass_id)
-            reports = await self._arun_runtime_pass(
-                runtime=state.runtime,
-                run_id=state.run_id,
-                pass_id=pass_id,
-                chunks=chunks,
-                task_instructions=request.task.instructions,
-                batch_concurrency=batch_concurrency,
-            )
-            additions_this_pass = 0
-            for report in reports:
-                additions_this_pass += self._process_report(state, report, request, pass_id)
-            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
-                break
-
-        return await self._finalize_async(state, request)
-
-    def _execute_stream(
-        self, *, request: ExtractRequest
-    ) -> Generator[SourceryEngine.StreamEvent, None, ExtractResult]:
-        state = self._start_run(request)
-
-        for pass_id in range(1, request.options.max_passes + 1):
-            chunks = self._plan_pass(state, request, pass_id)
-            additions_this_pass = 0
-
-            for chunk in chunks:
-                reports = self._run_runtime_pass(
-                    runtime=state.runtime,
-                    run_id=state.run_id,
-                    pass_id=pass_id,
-                    chunks=[chunk],
-                    task_instructions=request.task.instructions,
-                    batch_concurrency=1,
-                )
-                for report in reports:
-                    doc_id = report.chunk.document_id
-                    pre_merge_keys = {
-                        _extraction_key(ext) for ext in state.document_extractions[doc_id]
-                    }
-                    additions = self._process_report(state, report, request, pass_id)
-                    additions_this_pass += additions
-                    for extraction in state.document_extractions[doc_id]:
-                        if _extraction_key(extraction) not in pre_merge_keys:
-                            yield StreamExtractionAdded(document_id=doc_id, extraction=extraction)
-                    yield StreamChunkDone(
-                        chunk_id=report.chunk.chunk_id,
-                        document_id=doc_id,
-                        pass_id=pass_id,
-                        candidates_found=len(report.candidates),
-                    )
-
-            yield StreamPassDone(
-                pass_id=pass_id,
-                additions_this_pass=additions_this_pass,
-                extractions_so_far=sum(
-                    len(extractions) for extractions in state.document_extractions.values()
-                ),
-            )
-
-            if request.options.stop_when_no_new_extractions and additions_this_pass == 0:
-                break
-
-        return self._finalize(state, request)
 
 
 def extract(request: ExtractRequest, engine: SourceryEngine | None = None) -> ExtractResult:

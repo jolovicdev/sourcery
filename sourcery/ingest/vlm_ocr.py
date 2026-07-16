@@ -25,6 +25,8 @@ class BlackGeorgeVLMOCRBackend:
     def extract_text(self, *, image_path: Path, prompt: str | None = None) -> str:
         import blackgeorge
 
+        if not image_path.is_file():
+            raise SourceryIngestionError(f"Image file does not exist: {image_path}")
         resolved_prompt = prompt or self._default_prompt
         image_uri = blackgeorge.encode_file(str(image_path))
         worker = blackgeorge.Worker(
@@ -41,13 +43,19 @@ class BlackGeorgeVLMOCRBackend:
             model=self._runtime.model,
             temperature=self._runtime.temperature,
             max_tokens=self._runtime.max_tokens,
+            respect_context_window=self._runtime.respect_context_window,
+            storage_dir=self._runtime.storage_dir,
         )
-        report = desk.run(worker, job)
+        try:
+            report = desk.run(worker, job)
+        finally:
+            desk.close()
+        if report.status != "completed":
+            errors = "; ".join(report.errors) or f"run status was {report.status}"
+            raise SourceryIngestionError(f"VLM OCR failed for {image_path.name}: {errors}")
         content = report.content
         if content:
             return content.strip()
-        if report.data is not None:
-            return str(report.data).strip()
         raise SourceryIngestionError(
             f"VLM OCR produced empty text for {image_path.name}"
             + (f" ({'; '.join(report.errors)})" if report.errors else "")

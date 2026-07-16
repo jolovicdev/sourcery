@@ -51,14 +51,18 @@ def _strip_html_to_text(content: str) -> str:
 def _load_pdf_from_bytes(pdf_bytes: bytes) -> str:
     try:
         pypdf_module = importlib.import_module("pypdf")
-        pdf_reader_type = getattr(pypdf_module, "PdfReader")
-    except Exception as exc:
+    except ModuleNotFoundError as exc:
+        if exc.name != "pypdf":
+            raise
         raise SourceryDependencyError(
-            "PDF ingestion requires `pypdf` (install with `uv pip install pypdf`)."
+            "PDF ingestion requires the ingest extra. Run `uv sync --extra ingest`."
         ) from exc
 
-    reader = pdf_reader_type(BytesIO(pdf_bytes))
-    pages = [(page.extract_text() or "") for page in reader.pages]
+    try:
+        reader = pypdf_module.PdfReader(BytesIO(pdf_bytes))
+        pages = [(page.extract_text() or "") for page in reader.pages]
+    except Exception as exc:
+        raise SourceryIngestionError(f"Could not read PDF: {exc}") from exc
     text = "\n".join(pages).strip()
     if not text:
         raise SourceryIngestionError("PDF ingestion produced empty text")
@@ -72,9 +76,13 @@ def load_pdf_document(
     metadata: dict[str, Any] | None = None,
 ) -> SourceDocument:
     pdf_path = Path(path)
-    if not pdf_path.exists():
+    if not pdf_path.is_file():
         raise SourceryIngestionError(f"PDF file does not exist: {pdf_path}")
-    text = _load_pdf_from_bytes(pdf_path.read_bytes())
+    try:
+        payload = pdf_path.read_bytes()
+    except OSError as exc:
+        raise SourceryIngestionError(f"Could not read PDF file: {pdf_path}") from exc
+    text = _load_pdf_from_bytes(payload)
     return SourceDocument(
         document_id=document_id or pdf_path.stem,
         text=text,
@@ -95,9 +103,12 @@ def load_html_document(
         source_ref = "inline_html"
     else:
         html_path = Path(source)
-        if not html_path.exists():
+        if not html_path.is_file():
             raise SourceryIngestionError(f"HTML file does not exist: {html_path}")
-        html_text = html_path.read_text(encoding="utf-8", errors="ignore")
+        try:
+            html_text = html_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            raise SourceryIngestionError(f"Could not read HTML file: {html_path}") from exc
         doc_id = document_id or html_path.stem
         source_ref = str(html_path)
 
@@ -121,17 +132,26 @@ def load_url_document(
 ) -> SourceDocument:
     if not _is_url(url):
         raise SourceryIngestionError(f"Not a valid URL: {url}")
+    if timeout_seconds <= 0:
+        raise SourceryIngestionError("URL timeout must be greater than zero")
 
     request = Request(url, headers={"User-Agent": user_agent})
-    with urlopen(request, timeout=timeout_seconds) as response:
-        payload = response.read()
-        content_type = response.headers.get("Content-Type", "").lower()
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            payload = response.read()
+            content_type = response.headers.get("Content-Type", "").lower()
+            charset = response.headers.get_content_charset() or "utf-8"
+    except Exception as exc:
+        raise SourceryIngestionError(f"Could not load URL: {url}") from exc
 
-    if "application/pdf" in content_type or url.lower().endswith(".pdf"):
+    if "application/pdf" in content_type or urlparse(url).path.lower().endswith(".pdf"):
         text = _load_pdf_from_bytes(payload)
         source_type = "url_pdf"
     else:
-        decoded = payload.decode("utf-8", errors="ignore")
+        try:
+            decoded = payload.decode(charset)
+        except (LookupError, UnicodeDecodeError) as exc:
+            raise SourceryIngestionError(f"Could not decode URL content as {charset}") from exc
         if "text/html" in content_type or "<html" in decoded.lower():
             text = _strip_html_to_text(decoded)
             source_type = "url_html"
@@ -158,16 +178,29 @@ def load_source_document(
 ) -> SourceDocument:
     if isinstance(source, SourceDocument):
         return source
+    if isinstance(source, str) and _is_url(source):
+        return load_url_document(source, document_id=document_id, metadata=metadata)
 
     source_path = Path(source)
-    if source_path.exists():
+    try:
+        path_exists = source_path.exists()
+    except OSError:
+        path_exists = False
+    if isinstance(source, Path) and not path_exists:
+        raise SourceryIngestionError(f"File does not exist: {source_path}")
+    if path_exists:
+        if not source_path.is_file():
+            raise SourceryIngestionError(f"Source path is not a file: {source_path}")
         suffix = source_path.suffix.lower()
         if suffix == ".pdf":
             return load_pdf_document(source_path, document_id=document_id, metadata=metadata)
         if suffix in _HTML_SUFFIXES:
             return load_html_document(source_path, document_id=document_id, metadata=metadata)
 
-        text = source_path.read_text(encoding="utf-8", errors="ignore")
+        try:
+            text = source_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            raise SourceryIngestionError(f"Could not read text file: {source_path}") from exc
         if not text.strip():
             raise SourceryIngestionError(
                 f"Text ingestion produced empty text for file: {source_path}"
@@ -181,9 +214,6 @@ def load_source_document(
                 source=str(source_path),
             ),
         )
-
-    if isinstance(source, str) and _is_url(source):
-        return load_url_document(source, document_id=document_id, metadata=metadata)
 
     text = str(source)
     if not text.strip():
@@ -218,7 +248,7 @@ def load_vlm_ocr_document(
     prompt: str | None = None,
 ) -> SourceDocument:
     image_path = Path(path)
-    if not image_path.exists():
+    if not image_path.is_file():
         raise SourceryIngestionError(f"Image file does not exist: {image_path}")
     text = backend.extract_text(image_path=image_path, prompt=prompt)
     if not text.strip():

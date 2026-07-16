@@ -1,241 +1,211 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
+import asyncio
+from pathlib import Path
 from typing import Any
 
-import pytest
+from blackgeorge.adapters.base import BaseModelAdapter
+from pydantic import BaseModel
 
 from sourcery.contracts import (
     AlignedExtraction,
-    ChunkExtractionReport,
+    EntitySchemaSet,
+    EntitySpec,
     ExtractionProvenance,
     ReconciliationConfig,
+    RetryPolicy,
     RuntimeConfig,
     SessionRefinementConfig,
     SourceDocument,
     TextChunk,
 )
-from sourcery.exceptions import RuntimeIntegrationError
+from sourcery.pipeline.prompt_compiler import PromptCompiler
+from sourcery.runtime.blackgeorge_models import SessionRefinementResult
 from sourcery.runtime.blackgeorge_runtime import BlackGeorgeRuntime
 
 
-def _chunk(document_id: str, order_index: int, *, pass_id: int = 1) -> TextChunk:
+class PersonAttributes(BaseModel):
+    role: str
+
+
+class DeterministicAdapter(BaseModelAdapter):
+    def __init__(self, failures: int = 0) -> None:
+        self.failures = failures
+        self.schemas: list[str] = []
+
+    def structured_complete(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, Any]],
+        response_schema: Any,
+        retries: int,
+    ) -> Any:
+        self.schemas.append(response_schema.__name__)
+        if self.failures:
+            self.failures -= 1
+            raise TimeoutError("temporary timeout")
+        if response_schema is SessionRefinementResult:
+            return response_schema(refinement_context="Earlier context")
+        return response_schema(extractions=[])
+
+    async def astructured_complete(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, Any]],
+        response_schema: Any,
+        retries: int,
+    ) -> Any:
+        return self.structured_complete(
+            model=model,
+            messages=messages,
+            response_schema=response_schema,
+            retries=retries,
+        )
+
+
+def make_runtime(
+    storage_dir: Path,
+    *,
+    retry: RetryPolicy | None = None,
+    refinement: SessionRefinementConfig | None = None,
+    reconciliation: ReconciliationConfig | None = None,
+) -> BlackGeorgeRuntime:
+    config = RuntimeConfig(
+        model="test/model",
+        storage_dir=str(storage_dir),
+        retry=retry or RetryPolicy(),
+        session_refinement=refinement or SessionRefinementConfig(),
+        reconciliation=reconciliation or ReconciliationConfig(),
+    )
+    schema = EntitySchemaSet(
+        entities=[EntitySpec(name="person", attributes_model=PersonAttributes)]
+    )
+    return BlackGeorgeRuntime(config, schema, PromptCompiler())
+
+
+def chunk(document_id: str, order_index: int) -> TextChunk:
     text = f"{document_id} chunk {order_index}"
     char_start = order_index * 20
-    char_end = char_start + len(text)
     return TextChunk(
-        chunk_id=f"{document_id}:p{pass_id}:c{order_index}",
+        chunk_id=f"{document_id}:p1:c{order_index}",
         document_id=document_id,
-        pass_id=pass_id,
+        pass_id=1,
         order_index=order_index,
         text=text,
         char_start=char_start,
-        char_end=char_end,
+        char_end=char_start + len(text),
     )
 
 
-def _report(run_id: str, pass_id: int, chunk: TextChunk) -> ChunkExtractionReport:
-    return ChunkExtractionReport(
-        run_id=run_id,
-        pass_id=pass_id,
-        chunk=chunk,
-        candidates=[],
-        warnings=[],
-        events=[],
-        worker_name="ExtractorWorker",
-        model="deepseek/deepseek-chat",
-        raw_run_id="raw-run-id",
-    )
-
-
-def _aligned_extraction() -> AlignedExtraction:
+def extraction(text: str, start: int, confidence: float) -> AlignedExtraction:
     return AlignedExtraction(
-        entity="concept",
-        text="Transformer",
-        attributes={"category": "architecture"},
-        char_start=0,
-        char_end=11,
+        entity="person",
+        text=text,
+        attributes={"role": "researcher"},
+        char_start=start,
+        char_end=start + len(text),
         alignment_status="exact",
+        confidence=confidence,
         provenance=ExtractionProvenance(
             run_id="run-1",
             pass_id=1,
             chunk_id="doc-1:p1:c0",
             worker_name="ExtractorWorker",
-            model="deepseek/deepseek-chat",
+            model="test/model",
         ),
     )
 
 
-def test_run_pass_preserves_input_chunk_order_across_documents() -> None:
-    runtime: Any = object.__new__(BlackGeorgeRuntime)
-    chunks = [
-        _chunk("doc-a", 0),
-        _chunk("doc-a", 1),
-        _chunk("doc-b", 0),
-    ]
-
-    runtime._build_refinement_contexts = lambda **_: {}
-    runtime._chunk_batches = lambda batch_chunks, _batch_size: [list(batch_chunks)]
-
-    def run_flow_batch(**kwargs: Any) -> list[ChunkExtractionReport]:
-        return [
-            _report(kwargs["run_id"], kwargs["pass_id"], chunk)
-            for chunk in reversed(kwargs["chunks"])
-        ]
-
-    runtime._run_flow_batch = run_flow_batch
-
-    reports = BlackGeorgeRuntime.run_pass(
-        runtime,
-        run_id="run-1",
-        pass_id=1,
-        chunks=chunks,
-        task_instructions="Extract entities",
-        batch_concurrency=4,
-    )
-
-    assert [report.chunk.chunk_id for report in reports] == [chunk.chunk_id for chunk in chunks]
-
-
-class _FakeWorker:
-    def __init__(self, *, name: str, instructions: str) -> None:
-        self.name = name
-        self.instructions = instructions
-
-
-class _FakeSession:
-    def __init__(self, session_id: str) -> None:
-        self.session_id = session_id
-
-
-class _FakeDesk:
-    def __init__(self) -> None:
-        self.session_calls: list[tuple[str, dict[str, Any]]] = []
-
-    def session(self, worker: Any, *, session_id: str, metadata: dict[str, Any]) -> _FakeSession:
-        self.session_calls.append((session_id, dict(metadata)))
-        return _FakeSession(session_id)
-
-
-def test_refinement_uses_isolated_session_per_document() -> None:
-    runtime: Any = object.__new__(BlackGeorgeRuntime)
-    runtime._runtime_config = RuntimeConfig(
-        model="deepseek/deepseek-chat",
-        session_refinement=SessionRefinementConfig(enabled=True, max_turns=1, context_chars=200),
-    )
-    runtime._blackgeorge = SimpleNamespace(Worker=_FakeWorker)
-    fake_desk = _FakeDesk()
-    runtime._desk = fake_desk
-    runtime._provider_name = lambda: "deepseek"
-
-    calls: list[tuple[str, str, str]] = []
-
-    def run_session_with_retries(
-        *, session: _FakeSession, payload: dict[str, Any], context: Any
-    ) -> Any:
-        calls.append((session.session_id, payload["document_id"], payload["chunk_id"]))
-        return SimpleNamespace(
-            data={"refinement_context": f"{payload['document_id']}::{payload['chunk_id']}"}
-        )
-
-    runtime._run_session_with_retries = run_session_with_retries
-
-    chunks = [
-        _chunk("doc-a", 1),
-        _chunk("doc-b", 0),
-        _chunk("doc-a", 0),
-    ]
-
-    contexts = BlackGeorgeRuntime._build_refinement_contexts(
-        runtime,
-        run_id="run-1",
-        pass_id=1,
-        chunks=chunks,
-        task_instructions="Extract entities",
-    )
-
-    assert fake_desk.session_calls == [
-        (
-            "sourcery-refinement:run-1:p1:doc-a",
-            {"run_id": "run-1", "pass_id": 1, "document_id": "doc-a"},
+def test_run_pass_uses_blackgeorge_flow_retries_and_keeps_input_order(
+    tmp_path: Path,
+) -> None:
+    runtime = make_runtime(
+        tmp_path,
+        retry=RetryPolicy(
+            max_attempts=2,
+            initial_backoff_seconds=0,
+            max_backoff_seconds=0,
         ),
-        (
-            "sourcery-refinement:run-1:p1:doc-b",
-            {"run_id": "run-1", "pass_id": 1, "document_id": "doc-b"},
-        ),
-    ]
-
-    session_by_document = {
-        metadata["document_id"]: session_id for session_id, metadata in fake_desk.session_calls
-    }
-    for session_id, document_id, _chunk_id in calls:
-        assert session_id == session_by_document[document_id]
-
-    assert set(contexts.keys()) == {chunk.chunk_id for chunk in chunks}
-
-
-def test_refinement_invalid_response_schema_raises_runtime_integration_error() -> None:
-    runtime: Any = object.__new__(BlackGeorgeRuntime)
-    runtime._runtime_config = RuntimeConfig(
-        model="deepseek/deepseek-chat",
-        session_refinement=SessionRefinementConfig(enabled=True, max_turns=1, context_chars=200),
     )
-    runtime._blackgeorge = SimpleNamespace(Worker=_FakeWorker)
-    runtime._desk = _FakeDesk()
-    runtime._provider_name = lambda: "deepseek"
-    runtime._run_session_with_retries = lambda **_: SimpleNamespace(
-        data={"refinement_context": {"invalid": "payload"}}
-    )
+    adapter = DeterministicAdapter(failures=1)
+    runtime._desk.adapter = adapter
+    chunks = [chunk("doc-a", 0), chunk("doc-a", 1), chunk("doc-b", 0)]
 
-    with pytest.raises(RuntimeIntegrationError):
-        BlackGeorgeRuntime._build_refinement_contexts(
-            runtime,
+    try:
+        reports = runtime.run_pass(
             run_id="run-1",
             pass_id=1,
-            chunks=[_chunk("doc-a", 0)],
-            task_instructions="Extract entities",
+            chunks=chunks,
+            task_instructions="Extract people",
+            batch_concurrency=3,
         )
+    finally:
+        runtime.close()
+
+    assert [report.chunk.chunk_id for report in reports] == [item.chunk_id for item in chunks]
+    assert len({report.worker_name for report in reports}) == len(chunks)
+    assert len(adapter.schemas) == 6
+    assert any(event.type == "run.completed" for report in reports for event in report.events)
+    assert any(event.type == "run.failed" for report in reports for event in report.events)
 
 
-def test_reconcile_document_falls_back_for_runtime_errors() -> None:
-    runtime: Any = object.__new__(BlackGeorgeRuntime)
-    runtime._runtime_config = RuntimeConfig(
-        model="deepseek/deepseek-chat",
-        reconciliation=ReconciliationConfig(enabled=True, use_workforce=True),
+def test_async_pass_runs_session_refinement_without_sync_event_loop_calls(
+    tmp_path: Path,
+) -> None:
+    runtime = make_runtime(
+        tmp_path,
+        refinement=SessionRefinementConfig(enabled=True, max_turns=1, context_chars=200),
     )
-    runtime._fallback_canonical_claims = lambda **_: []
-    runtime._run_reconciliation_workforce = lambda **_: (_ for _ in ()).throw(
-        RuntimeIntegrationError("retry exhausted")
+    adapter = DeterministicAdapter()
+    runtime._desk.adapter = adapter
+
+    try:
+        reports = asyncio.run(
+            runtime.arun_pass(
+                run_id="run-1",
+                pass_id=1,
+                chunks=[chunk("doc-a", 1), chunk("doc-b", 0), chunk("doc-a", 0)],
+                task_instructions="Extract people",
+                batch_concurrency=3,
+            )
+        )
+    finally:
+        runtime.close()
+
+    assert len(reports) == 3
+    assert adapter.schemas.count("SessionRefinementResult") == 3
+    assert any(event.type == "run.completed" for event in reports[0].events)
+
+
+def test_reconciliation_claim_limit_counts_accepted_claims(tmp_path: Path) -> None:
+    runtime = make_runtime(
+        tmp_path,
+        reconciliation=ReconciliationConfig(
+            enabled=True,
+            use_workforce=False,
+            min_mentions_for_claim=2,
+            max_claims=1,
+        ),
     )
+    extractions = [
+        extraction("Alice", 0, 0.9),
+        extraction("Transformer", 10, 0.8),
+        extraction("Transformer", 30, 1.0),
+    ]
 
-    result = BlackGeorgeRuntime.reconcile_document(
-        runtime,
-        run_id="run-1",
-        document=SourceDocument(document_id="doc-1", text="Transformer"),
-        extractions=[_aligned_extraction()],
-        task_instructions="Extract entities",
-    )
-
-    assert result.warnings
-    assert "RuntimeIntegrationError" in result.warnings[0]
-
-
-def test_reconcile_document_propagates_unexpected_errors() -> None:
-    runtime: Any = object.__new__(BlackGeorgeRuntime)
-    runtime._runtime_config = RuntimeConfig(
-        model="deepseek/deepseek-chat",
-        reconciliation=ReconciliationConfig(enabled=True, use_workforce=True),
-    )
-    runtime._fallback_canonical_claims = lambda **_: []
-    runtime._run_reconciliation_workforce = lambda **_: (_ for _ in ()).throw(
-        ValueError("unexpected failure")
-    )
-
-    with pytest.raises(ValueError):
-        BlackGeorgeRuntime.reconcile_document(
-            runtime,
+    try:
+        result = runtime.reconcile_document(
             run_id="run-1",
-            document=SourceDocument(document_id="doc-1", text="Transformer"),
-            extractions=[_aligned_extraction()],
-            task_instructions="Extract entities",
+            document=SourceDocument(document_id="doc-1", text="Alice Transformer Transformer"),
+            extractions=extractions,
+            task_instructions="Extract people",
         )
+    finally:
+        runtime.close()
+
+    assert len(result.canonical_claims) == 1
+    assert result.canonical_claims[0].canonical_text == "Transformer"
+    assert result.canonical_claims[0].extraction_indices == [1, 2]
+    assert result.canonical_claims[0].confidence == 0.9
