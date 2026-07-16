@@ -166,12 +166,7 @@
 <li><code>sourcery/runtime/errors.py</code>: provider error classification.</li>
 <li><code>sourcery/runtime/model_gateway.py</code>: schema + parser bridge.</li>
 <li><code>sourcery/runtime/blackgeorge_models.py</code>: runtime payload adapters.</li>
-<li><code>sourcery/runtime/blackgeorge_protocols.py</code>: internal runtime typing.</li>
-<li><code>sourcery/runtime/blackgeorge_retry_mixin.py</code>: retry/backoff/pause logic.</li>
-<li><code>sourcery/runtime/blackgeorge_refinement_mixin.py</code>: refinement context handling.</li>
-<li><code>sourcery/runtime/blackgeorge_flow_mixin.py</code>: chunk extraction flow.</li>
-<li><code>sourcery/runtime/blackgeorge_reconciliation_mixin.py</code>: canonical-claim workflow.</li>
-<li><code>sourcery/runtime/blackgeorge_runtime.py</code>: composed runtime implementation.</li>
+<li><code>sourcery/runtime/blackgeorge_runtime.py</code>: BlackGeorge flow, retry, refinement, and reconciliation adapter.</li>
 <li><code>sourcery/runtime/__init__.py</code>: runtime public exports.</li>
 </ul>
 <h2 id="ingestion">Ingestion<a class="headerlink" href="#ingestion" title="Permanent link">#</a></h2>
@@ -216,7 +211,7 @@
 <li><code>tests/test_io.py</code>: JSONL/viewer/reviewer behavior.</li>
 <li><code>tests/test_runtime_errors.py</code>: runtime error classifier behavior.</li>
 <li><code>tests/test_model_gateway.py</code>: response parsing behavior.</li>
-<li><code>tests/test_blackgeorge_runtime.py</code>: runtime mixin regressions.</li>
+<li><code>tests/test_blackgeorge_runtime.py</code>: BlackGeorge 1.3.0 runtime integration regressions.</li>
 <li><code>tests/test_benchmarks.py</code>: benchmark utility behavior.</li>
 </ul>
               

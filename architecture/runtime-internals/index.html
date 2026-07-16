@@ -81,7 +81,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#runtime-boundary">Runtime Boundary</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#blackgeorge-runtime-composition">BlackGeorge Runtime Composition</a>
+    <li class="toctree-l2"><a class="reference internal" href="#blackgeorge-runtime">BlackGeorge Runtime</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#observability-and-replay">Observability and Replay</a>
     </li>
@@ -154,18 +154,12 @@
 </ul>
 <p>Any runtime implementation that satisfies these interfaces can be swapped in.</p>
 <p><code>EngineDependencies</code> wires the runtime factory, prompt compiler, example validator, chunk planner, aligner, merger, and trace collector. This keeps the engine testable without making those dependency hooks decorative.</p>
-<h2 id="blackgeorge-runtime-composition">BlackGeorge Runtime Composition<a class="headerlink" href="#blackgeorge-runtime-composition" title="Permanent link">#</a></h2>
-<p><code>BlackGeorgeRuntime</code> combines focused mixins:</p>
-<ul>
-<li><code>blackgeorge_retry_mixin.py</code>: retry/backoff and paused-run resume.</li>
-<li><code>blackgeorge_refinement_mixin.py</code>: per-document session refinement contexts.</li>
-<li><code>blackgeorge_flow_mixin.py</code>: chunk flow execution and report normalization.</li>
-<li><code>blackgeorge_reconciliation_mixin.py</code>: document-level reconciliation workforce.</li>
-</ul>
+<h2 id="blackgeorge-runtime">BlackGeorge Runtime<a class="headerlink" href="#blackgeorge-runtime" title="Permanent link">#</a></h2>
+<p><code>BlackGeorgeRuntime</code> is one concrete adapter around BlackGeorge 1.3.0. It owns retry and paused-run policy, per-document session refinement, chunk flow normalization, and optional document reconciliation. Runtime protocols stay at the engine boundary rather than being repeated as mixin self-types.</p>
 <p><code>model_gateway.py</code> builds per-entity response schema variants and parses structured candidate output.</p>
 <h2 id="observability-and-replay">Observability and Replay<a class="headerlink" href="#observability-and-replay" title="Permanent link">#</a></h2>
 <ul>
-<li>Runtime subscribes to desk event bus (<code>run.*</code>, <code>worker.*</code>, <code>step.*</code>, <code>llm.*</code>, <code>tool.*</code>).</li>
+<li>Runtime subscribes to every desk event and reads completed run events from the run store.</li>
 <li>Events are normalized to <code>EventRecord</code> and attached to <code>ExtractionRunTrace</code>.</li>
 <li><code>replay_run</code> reads raw run data/events from run store for audits and debugging.</li>
 </ul>

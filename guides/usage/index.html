@@ -309,6 +309,10 @@
 <li><code>stop_when_no_new_extractions=True</code></li>
 <li><code>allow_unresolved=False</code></li>
 </ul>
+<p>With <code>accept_partial_exact=True</code>, partial alignment requires a contiguous match of at least two
+word tokens covering more than half of the candidate's word tokens. Unresolved results with the
+same entity and text are deduplicated across passes even when their attributes differ. The normal
+merge priority retains the earlier pass, then the higher-confidence result within the same pass.</p>
 <h2 id="minimal-example-inline-text">Minimal Example (Inline Text)<a class="headerlink" href="#minimal-example-inline-text" title="Permanent link">#</a></h2>
 <pre><code class="language-python">from pydantic import BaseModel
 import sourcery
@@ -341,7 +345,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 result = sourcery.extract(request)
@@ -355,7 +359,7 @@ for ext in result.documents[0].extractions:
 <pre><code class="language-python">result = sourcery.extract_from_sources(
     [&quot;1706.03762v7.pdf&quot;, &quot;https://example.com/article.html&quot;],
     task=task,
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 </code></pre>
 <p>Supported ingestion via <code>load_source_document(s)</code>:</p>
@@ -377,7 +381,9 @@ for ext in result.documents[0].extractions:
 <pre><code class="language-python">result = await sourcery.aextract(request)
 </code></pre>
 <h2 id="streaming-extraction">Streaming Extraction<a class="headerlink" href="#streaming-extraction" title="Permanent link">#</a></h2>
-<p><code>extract_stream(...)</code> yields chunk-level Sourcery events as extraction work completes. It is result/progress streaming, not token streaming.</p>
+<p><code>extract_stream(...)</code> processes up to <code>batch_concurrency</code> chunks concurrently. It emits each
+finished batch's extraction and chunk events in deterministic chunk order before starting the next
+batch. It is progress streaming, not completion-order or token streaming.</p>
 <pre><code class="language-python">from sourcery.contracts import StreamChunkDone, StreamExtractionAdded, StreamPassDone
 from sourcery.runtime import SourceryEngine
 
@@ -404,7 +410,7 @@ if raw_run_id:
 </code></pre>
 <h2 id="enabling-reconciliation-session-refinement">Enabling Reconciliation + Session Refinement<a class="headerlink" href="#enabling-reconciliation-session-refinement" title="Permanent link">#</a></h2>
 <pre><code class="language-python">runtime = RuntimeConfig(
-    model=&quot;deepseek/deepseek-chat&quot;,
+    model=&quot;deepseek/deepseek-v4-pro&quot;,
     session_refinement={&quot;enabled&quot;: True, &quot;max_turns&quot;: 1, &quot;context_chars&quot;: 320},
     reconciliation={&quot;enabled&quot;: True, &quot;use_workforce&quot;: True, &quot;max_claims&quot;: 100},
 )

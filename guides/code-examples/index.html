@@ -181,7 +181,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 result = sourcery.extract(request)
@@ -247,7 +247,7 @@ request = ExtractRequest(
         fuzzy_alignment_threshold=0.82,
         stop_when_no_new_extractions=True,
     ),
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 result = sourcery.extract(request)
@@ -301,7 +301,7 @@ result = sourcery.extract_from_sources(
         &quot;https://example.com/report&quot;,
     ],
     task=task,
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 print(result.metrics.documents_total)
@@ -346,7 +346,7 @@ async def main() -&gt; None:
                 )
             ],
         ),
-        runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+        runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
     )
     result = await sourcery.aextract(request)
     print(result.metrics.extracted_total)
@@ -397,7 +397,7 @@ request = ExtractRequest(
         ],
     ),
     runtime=RuntimeConfig(
-        model=&quot;deepseek/deepseek-chat&quot;,
+        model=&quot;deepseek/deepseek-v4-pro&quot;,
         retry=RetryPolicy(
             max_attempts=4,
             initial_backoff_seconds=0.8,
@@ -462,7 +462,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 result = sourcery.extract(request)
@@ -522,7 +522,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 result = engine.extract(request)
@@ -602,7 +602,7 @@ for event in engine.extract_stream(request):
   --max-chars 4500 \
   --max-passes 2 \
   --batch-concurrency 4 \
-  --sourcery-model deepseek/deepseek-chat
+  --sourcery-model deepseek/deepseek-v4-flash
 </code></pre>
 <p>Compatibility wrapper:</p>
 <pre><code class="language-bash">uv run benchmark_compare.py --text-types english

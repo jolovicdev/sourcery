@@ -176,17 +176,26 @@
 </ul>
 <h2 id="behavior-that-affects-output">Behavior That Affects Output<a class="headerlink" href="#behavior-that-affects-output" title="Permanent link">#</a></h2>
 <ul>
-<li>If <code>allow_unresolved=False</code> (default), unresolved candidates are counted in metrics but not returned in <code>documents[*].extractions</code>.</li>
-<li>If <code>strict_example_alignment=True</code> (default in <code>ExtractionTask</code>) and examples are unresolved, extraction raises <code>ExampleValidationError</code> before runtime execution.</li>
+<li>If <code>allow_unresolved=False</code> (default), unresolved candidates are counted in metrics but not
+  returned in <code>documents[*].extractions</code>.</li>
+<li>With <code>accept_partial_exact=True</code>, partial alignment requires a contiguous match of at least two
+  word tokens covering more than half of the candidate's word tokens.</li>
+<li>Unresolved results with the same entity and text are deduplicated across passes regardless of
+  attribute differences. Merge priority retains the earlier pass, then the higher-confidence
+  result within the same pass.</li>
+<li>If <code>strict_example_alignment=True</code> (default in <code>ExtractionTask</code>) and examples are unresolved,
+  extraction raises <code>ExampleValidationError</code> before runtime execution.</li>
 <li><code>SourceryEngine.aextract(...)</code> uses native async runtime calls.</li>
-<li><code>SourceryEngine.extract_stream(...)</code> emits chunk/pass result events and still returns the same final <code>ExtractResult</code> when exhausted.</li>
-<li>If reconciliation workforce fails at runtime, the engine falls back to deterministic canonical-claim construction and records warnings.</li>
+<li><code>SourceryEngine.extract_stream(...)</code> processes bounded concurrent chunk batches, emits each batch
+  in deterministic chunk order, and still returns the same final <code>ExtractResult</code> when exhausted.</li>
+<li>If reconciliation workforce fails at runtime, the engine falls back to deterministic
+  canonical-claim construction and records warnings.</li>
 </ul>
 <h2 id="practical-baseline">Practical Baseline<a class="headerlink" href="#practical-baseline" title="Permanent link">#</a></h2>
 <pre><code class="language-python">from sourcery.contracts import ExtractOptions, RuntimeConfig
 
 runtime = RuntimeConfig(
-    model=&quot;deepseek/deepseek-chat&quot;,
+    model=&quot;deepseek/deepseek-v4-pro&quot;,
     temperature=0.0,
 )
 

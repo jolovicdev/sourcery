@@ -133,14 +133,14 @@
 <li><code>uv</code> package manager</li>
 <li>API key for your model provider (for example <code>DEEPSEEK_API_KEY</code>)</li>
 </ul>
-<p>Base runtime dependency is <code>blackgeorge</code> (installed automatically with <code>sourceryforge</code>).</p>
+<p>The base runtime dependency is pinned to <code>blackgeorge==1.3.0</code> and installs with <code>sourceryforge</code>.</p>
 <p>PyPI distribution name is <code>sourceryforge</code>, while Python import path remains <code>sourcery</code>.</p>
 <h2 id="install-dependencies">Install Dependencies<a class="headerlink" href="#install-dependencies" title="Permanent link">#</a></h2>
 <p>Core package only:</p>
 <pre><code class="language-bash">uv sync
 </code></pre>
 <p>Install from PyPI:</p>
-<pre><code class="language-bash">pip install sourceryforge
+<pre><code class="language-bash">uv add sourceryforge
 </code></pre>
 <p>With ingestion adapters (PDF/URL workflows):</p>
 <pre><code class="language-bash">uv sync --extra ingest
@@ -159,7 +159,7 @@ This repository itself explicitly reads these keys in helper scripts:</p>
 <pre><code class="language-bash">export OPENROUTER_API_KEY=&quot;...&quot;
 </code></pre>
 <p>Set the credentials required by your selected model route before calling extraction.
-For example, <code>RuntimeConfig(model="deepseek/deepseek-chat")</code> typically requires <code>DEEPSEEK_API_KEY</code>.</p>
+For example, <code>RuntimeConfig(model="deepseek/deepseek-v4-pro")</code> and <code>RuntimeConfig(model="deepseek/deepseek-v4-flash")</code> require <code>DEEPSEEK_API_KEY</code>.</p>
 <p>Benchmark scripts use <code>DEEPSEEK_API_KEY</code> or <code>OPENROUTER_API_KEY</code> depending on <code>--sourcery-model</code>.</p>
 <h2 id="smoke-test">Smoke Test<a class="headerlink" href="#smoke-test" title="Permanent link">#</a></h2>
 <pre><code class="language-bash">uv run python - &lt;&lt;'PY'
@@ -182,7 +182,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-chat&quot;),
+    runtime=RuntimeConfig(model=&quot;deepseek/deepseek-v4-pro&quot;),
 )
 
 result = sourcery.extract(request)

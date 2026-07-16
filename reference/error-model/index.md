@@ -42,7 +42,7 @@ Dependency errors indicate missing optional packages (`pypdf`).
 - rate-limit markers (`429`, `rate limit`, `too many requests`, `quota`),
 - transient markers (`timeout`, `503`, `502`, `connection reset`, etc.).
 
-This classification drives retry decisions in BlackGeorge runtime mixins.
+This classification drives retry decisions in `BlackGeorgeRuntime`.
 
 ## Recommended Handling Pattern
 

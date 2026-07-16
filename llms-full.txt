@@ -61,7 +61,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -93,7 +93,7 @@ uv run --extra docs mkdocs build --strict
 - `uv` package manager
 - API key for your model provider (for example `DEEPSEEK_API_KEY`)
 
-Base runtime dependency is `blackgeorge` (installed automatically with `sourceryforge`).
+The base runtime dependency is pinned to `blackgeorge==1.3.0` and installs with `sourceryforge`.
 
 PyPI distribution name is `sourceryforge`, while Python import path remains `sourcery`.
 
@@ -108,7 +108,7 @@ uv sync
 Install from PyPI:
 
 ```
-pip install sourceryforge
+uv add sourceryforge
 ```
 
 With ingestion adapters (PDF/URL workflows):
@@ -141,7 +141,7 @@ export DEEPSEEK_API_KEY="..."
 export OPENROUTER_API_KEY="..."
 ```
 
-Set the credentials required by your selected model route before calling extraction. For example, `RuntimeConfig(model="deepseek/deepseek-chat")` typically requires `DEEPSEEK_API_KEY`.
+Set the credentials required by your selected model route before calling extraction. For example, `RuntimeConfig(model="deepseek/deepseek-v4-pro")` and `RuntimeConfig(model="deepseek/deepseek-v4-flash")` require `DEEPSEEK_API_KEY`.
 
 Benchmark scripts use `DEEPSEEK_API_KEY` or `OPENROUTER_API_KEY` depending on `--sourcery-model`.
 
@@ -168,7 +168,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -241,7 +241,7 @@ request = ExtractRequest(
         ],
     ),
     options=ExtractOptions(max_passes=2, stop_when_no_new_extractions=True),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat", temperature=0.0),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-flash", temperature=0.0),
 )
 
 result = sourcery.extract(request)
@@ -337,7 +337,7 @@ sources = [
     "https://example.com/news/article",
     "Inline note: Helen joined Orbit Labs as COO.",
 ]
-runtime = RuntimeConfig(model="deepseek/deepseek-chat", temperature=0.0)
+runtime = RuntimeConfig(model="deepseek/deepseek-v4-pro", temperature=0.0)
 options = ExtractOptions(
     max_chunk_chars=1200,
     max_passes=2,
@@ -437,7 +437,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -506,7 +506,7 @@ request = ExtractRequest(
         fuzzy_alignment_threshold=0.82,
         stop_when_no_new_extractions=True,
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -563,7 +563,7 @@ result = sourcery.extract_from_sources(
         "https://example.com/report",
     ],
     task=task,
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 print(result.metrics.documents_total)
@@ -613,7 +613,7 @@ async def main() -> None:
                 )
             ],
         ),
-        runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+        runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
     )
     result = await sourcery.aextract(request)
     print(result.metrics.extracted_total)
@@ -667,7 +667,7 @@ request = ExtractRequest(
         ],
     ),
     runtime=RuntimeConfig(
-        model="deepseek/deepseek-chat",
+        model="deepseek/deepseek-v4-pro",
         retry=RetryPolicy(
             max_attempts=4,
             initial_backoff_seconds=0.8,
@@ -735,7 +735,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -801,7 +801,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = engine.extract(request)
@@ -896,7 +896,7 @@ uv run sourcery-benchmark \
   --max-chars 4500 \
   --max-passes 2 \
   --batch-concurrency 4 \
-  --sourcery-model deepseek/deepseek-chat
+  --sourcery-model deepseek/deepseek-v4-flash
 ```
 
 Compatibility wrapper:
@@ -1058,6 +1058,8 @@ Document-level reconciliation (optional):
 - `stop_when_no_new_extractions=True`
 - `allow_unresolved=False`
 
+With `accept_partial_exact=True`, partial alignment requires a contiguous match of at least two word tokens covering more than half of the candidate's word tokens. Unresolved results with the same entity and text are deduplicated across passes even when their attributes differ. The normal merge priority retains the earlier pass, then the higher-confidence result within the same pass.
+
 ## Minimal Example (Inline Text)
 
 ```
@@ -1092,7 +1094,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -1111,7 +1113,7 @@ Use the source-based helper:
 result = sourcery.extract_from_sources(
     ["1706.03762v7.pdf", "https://example.com/article.html"],
     task=task,
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 ```
 
@@ -1139,7 +1141,7 @@ result = await sourcery.aextract(request)
 
 ## Streaming Extraction
 
-`extract_stream(...)` yields chunk-level Sourcery events as extraction work completes. It is result/progress streaming, not token streaming.
+`extract_stream(...)` processes up to `batch_concurrency` chunks concurrently. It emits each finished batch's extraction and chunk events in deterministic chunk order before starting the next batch. It is progress streaming, not completion-order or token streaming.
 
 ```
 from sourcery.contracts import StreamChunkDone, StreamExtractionAdded, StreamPassDone
@@ -1174,7 +1176,7 @@ if raw_run_id:
 
 ```
 runtime = RuntimeConfig(
-    model="deepseek/deepseek-chat",
+    model="deepseek/deepseek-v4-pro",
     session_refinement={"enabled": True, "max_turns": 1, "context_chars": 320},
     reconciliation={"enabled": True, "use_workforce": True, "max_claims": 100},
 )
@@ -1304,9 +1306,11 @@ Optional workflows:
 ## Behavior That Affects Output
 
 - If `allow_unresolved=False` (default), unresolved candidates are counted in metrics but not returned in `documents[*].extractions`.
+- With `accept_partial_exact=True`, partial alignment requires a contiguous match of at least two word tokens covering more than half of the candidate's word tokens.
+- Unresolved results with the same entity and text are deduplicated across passes regardless of attribute differences. Merge priority retains the earlier pass, then the higher-confidence result within the same pass.
 - If `strict_example_alignment=True` (default in `ExtractionTask`) and examples are unresolved, extraction raises `ExampleValidationError` before runtime execution.
 - `SourceryEngine.aextract(...)` uses native async runtime calls.
-- `SourceryEngine.extract_stream(...)` emits chunk/pass result events and still returns the same final `ExtractResult` when exhausted.
+- `SourceryEngine.extract_stream(...)` processes bounded concurrent chunk batches, emits each batch in deterministic chunk order, and still returns the same final `ExtractResult` when exhausted.
 - If reconciliation workforce fails at runtime, the engine falls back to deterministic canonical-claim construction and records warnings.
 
 ## Practical Baseline
@@ -1315,7 +1319,7 @@ Optional workflows:
 from sourcery.contracts import ExtractOptions, RuntimeConfig
 
 runtime = RuntimeConfig(
-    model="deepseek/deepseek-chat",
+    model="deepseek/deepseek-v4-pro",
     temperature=0.0,
 )
 
@@ -1596,7 +1600,7 @@ uv run sourcery-benchmark \
   --text-types english,japanese \
   --max-chars 4500 \
   --max-passes 2 \
-  --sourcery-model deepseek/deepseek-chat
+  --sourcery-model deepseek/deepseek-v4-flash
 ```
 
 ## Important Flags
@@ -1640,8 +1644,8 @@ Run the full validation suite before merging changes.
 
 ```
 uv run --extra dev pytest -q
-uv run --extra dev ruff check sourcery tests
-uv run --extra dev mypy sourcery
+uv run ruff check .
+uv run mypy .
 ```
 
 ## Focused Test Runs
@@ -1813,20 +1817,15 @@ Any runtime implementation that satisfies these interfaces can be swapped in.
 
 `EngineDependencies` wires the runtime factory, prompt compiler, example validator, chunk planner, aligner, merger, and trace collector. This keeps the engine testable without making those dependency hooks decorative.
 
-## BlackGeorge Runtime Composition
+## BlackGeorge Runtime
 
-`BlackGeorgeRuntime` combines focused mixins:
-
-- `blackgeorge_retry_mixin.py`: retry/backoff and paused-run resume.
-- `blackgeorge_refinement_mixin.py`: per-document session refinement contexts.
-- `blackgeorge_flow_mixin.py`: chunk flow execution and report normalization.
-- `blackgeorge_reconciliation_mixin.py`: document-level reconciliation workforce.
+`BlackGeorgeRuntime` is one concrete adapter around BlackGeorge 1.3.0. It owns retry and paused-run policy, per-document session refinement, chunk flow normalization, and optional document reconciliation. Runtime protocols stay at the engine boundary rather than being repeated as mixin self-types.
 
 `model_gateway.py` builds per-entity response schema variants and parses structured candidate output.
 
 ## Observability and Replay
 
-- Runtime subscribes to desk event bus (`run.*`, `worker.*`, `step.*`, `llm.*`, `tool.*`).
+- Runtime subscribes to every desk event and reads completed run events from the run store.
 - Events are normalized to `EventRecord` and attached to `ExtractionRunTrace`.
 - `replay_run` reads raw run data/events from run store for audits and debugging.
 
@@ -1921,7 +1920,7 @@ from sourcery.contracts import ExtractionTask, RuntimeConfig
 result = sourcery.extract_from_sources(
     ["sample.pdf", "https://example.com/article"],
     task=ExtractionTask(...),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 ```
 
@@ -1970,7 +1969,7 @@ All contracts are defined in `sourcery/contracts/models.py`.
 - `StreamChunkDone`
 - `StreamPassDone`
 
-Streaming events are emitted by `SourceryEngine.extract_stream(...)` as chunk results land. They report added extractions, completed chunks, and completed passes; the final `ExtractResult` is returned when the generator is exhausted.
+`SourceryEngine.extract_stream(...)` runs up to `batch_concurrency` chunks concurrently and emits each finished batch in deterministic chunk order. Events report added extractions, completed chunks, and completed passes; the final `ExtractResult` is returned when the generator is exhausted.
 
 ## Validation Guarantees
 
@@ -2041,7 +2040,7 @@ Dependency errors indicate missing optional packages (`pypdf`).
 - rate-limit markers (`429`, `rate limit`, `too many requests`, `quota`),
 - transient markers (`timeout`, `503`, `502`, `connection reset`, etc.).
 
-This classification drives retry decisions in BlackGeorge runtime mixins.
+This classification drives retry decisions in `BlackGeorgeRuntime`.
 
 ## Recommended Handling Pattern
 
@@ -2102,12 +2101,7 @@ This map links each tracked module to its responsibility.
 - `sourcery/runtime/errors.py`: provider error classification.
 - `sourcery/runtime/model_gateway.py`: schema + parser bridge.
 - `sourcery/runtime/blackgeorge_models.py`: runtime payload adapters.
-- `sourcery/runtime/blackgeorge_protocols.py`: internal runtime typing.
-- `sourcery/runtime/blackgeorge_retry_mixin.py`: retry/backoff/pause logic.
-- `sourcery/runtime/blackgeorge_refinement_mixin.py`: refinement context handling.
-- `sourcery/runtime/blackgeorge_flow_mixin.py`: chunk extraction flow.
-- `sourcery/runtime/blackgeorge_reconciliation_mixin.py`: canonical-claim workflow.
-- `sourcery/runtime/blackgeorge_runtime.py`: composed runtime implementation.
+- `sourcery/runtime/blackgeorge_runtime.py`: BlackGeorge flow, retry, refinement, and reconciliation adapter.
 - `sourcery/runtime/__init__.py`: runtime public exports.
 
 ## Ingestion
@@ -2152,5 +2146,5 @@ This map links each tracked module to its responsibility.
 - `tests/test_io.py`: JSONL/viewer/reviewer behavior.
 - `tests/test_runtime_errors.py`: runtime error classifier behavior.
 - `tests/test_model_gateway.py`: response parsing behavior.
-- `tests/test_blackgeorge_runtime.py`: runtime mixin regressions.
+- `tests/test_blackgeorge_runtime.py`: BlackGeorge 1.3.0 runtime integration regressions.
 - `tests/test_benchmarks.py`: benchmark utility behavior.

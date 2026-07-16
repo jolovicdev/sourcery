@@ -52,7 +52,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)

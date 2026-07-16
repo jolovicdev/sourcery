@@ -128,8 +128,8 @@
 <p>Run the full validation suite before merging changes.</p>
 <h2 id="full-suite">Full Suite<a class="headerlink" href="#full-suite" title="Permanent link">#</a></h2>
 <pre><code class="language-bash">uv run --extra dev pytest -q
-uv run --extra dev ruff check sourcery tests
-uv run --extra dev mypy sourcery
+uv run ruff check .
+uv run mypy .
 </code></pre>
 <h2 id="focused-test-runs">Focused Test Runs<a class="headerlink" href="#focused-test-runs" title="Permanent link">#</a></h2>
 <pre><code class="language-bash">uv run --extra dev pytest -q tests/test_engine.py

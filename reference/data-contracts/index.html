@@ -171,7 +171,10 @@
 <li><code>StreamChunkDone</code></li>
 <li><code>StreamPassDone</code></li>
 </ul>
-<p>Streaming events are emitted by <code>SourceryEngine.extract_stream(...)</code> as chunk results land. They report added extractions, completed chunks, and completed passes; the final <code>ExtractResult</code> is returned when the generator is exhausted.</p>
+<p><code>SourceryEngine.extract_stream(...)</code> runs up to <code>batch_concurrency</code> chunks concurrently and emits
+each finished batch in deterministic chunk order. Events report added extractions, completed
+chunks, and completed passes; the final <code>ExtractResult</code> is returned when the generator is
+exhausted.</p>
 <h2 id="validation-guarantees">Validation Guarantees<a class="headerlink" href="#validation-guarantees" title="Permanent link">#</a></h2>
 <p>Contracts enforce:</p>
 <ul>

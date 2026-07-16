@@ -52,7 +52,7 @@ sources = [
     "https://example.com/news/article",
     "Inline note: Helen joined Orbit Labs as COO.",
 ]
-runtime = RuntimeConfig(model="deepseek/deepseek-chat", temperature=0.0)
+runtime = RuntimeConfig(model="deepseek/deepseek-v4-pro", temperature=0.0)
 options = ExtractOptions(
     max_chunk_chars=1200,
     max_passes=2,

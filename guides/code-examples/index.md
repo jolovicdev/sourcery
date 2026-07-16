@@ -43,7 +43,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -112,7 +112,7 @@ request = ExtractRequest(
         fuzzy_alignment_threshold=0.82,
         stop_when_no_new_extractions=True,
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -169,7 +169,7 @@ result = sourcery.extract_from_sources(
         "https://example.com/report",
     ],
     task=task,
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 print(result.metrics.documents_total)
@@ -219,7 +219,7 @@ async def main() -> None:
                 )
             ],
         ),
-        runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+        runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
     )
     result = await sourcery.aextract(request)
     print(result.metrics.extracted_total)
@@ -273,7 +273,7 @@ request = ExtractRequest(
         ],
     ),
     runtime=RuntimeConfig(
-        model="deepseek/deepseek-chat",
+        model="deepseek/deepseek-v4-pro",
         retry=RetryPolicy(
             max_attempts=4,
             initial_backoff_seconds=0.8,
@@ -341,7 +341,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = sourcery.extract(request)
@@ -407,7 +407,7 @@ request = ExtractRequest(
             )
         ],
     ),
-    runtime=RuntimeConfig(model="deepseek/deepseek-chat"),
+    runtime=RuntimeConfig(model="deepseek/deepseek-v4-pro"),
 )
 
 result = engine.extract(request)
@@ -502,7 +502,7 @@ uv run sourcery-benchmark \
   --max-chars 4500 \
   --max-passes 2 \
   --batch-concurrency 4 \
-  --sourcery-model deepseek/deepseek-chat
+  --sourcery-model deepseek/deepseek-v4-flash
 ```
 
 Compatibility wrapper:
